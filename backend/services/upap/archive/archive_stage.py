@@ -1,0 +1,39 @@
+﻿# -*- coding: utf-8 -*-
+"""
+ArchiveStage – creates an archive record from the process result.
+
+For now this is an in-memory / placeholder implementation.
+Later it can write to a database (ArchiveRecord model).
+"""
+
+from tester.hooks import after_validation
+from typing import Any, Dict
+import uuid
+
+from backend.services.upap.engine.stage_interface import StageInterface
+
+
+class ArchiveStage(StageInterface):
+    name = "archive"
+
+    def validate_input(self, payload: Dict[str, Any]) -> None:
+        if "process_result" not in payload:
+            raise ValueError("ArchiveStage: 'process_result' missing in context")
+
+    def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        process_result: Dict[str, Any] = context["process_result"]
+
+        archive_id = str(uuid.uuid4())
+
+        archive_record = {
+            "archive_id": archive_id,
+            "status": "archived",
+            "source": process_result.get("file_path"),
+            "meta": {
+                "features": process_result.get("features", {}),
+            },
+        }
+
+
+        after_validation({'pipeline': 'UPAP', 'stage': 'archive', 'schema': 'archive_record', 'status': 'PASS'})
+        return archive_record

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+SQLAlchemy
+pydantic
+python-multipart
+Pillow
+pytesseract
+python-dotenv

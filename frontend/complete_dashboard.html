@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>RecordsAI Dashboard</title>
+
+<style>
+    body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        background: #f5f7fa;
+        transition: 0.3s;
+    }
+
+    header {
+        background: #1f2937;
+        color: white;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    nav button {
+        margin-left: 10px;
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .logout-btn { background: #c62828; color: white; }
+    .profile-btn { background: #37474f; color: white; }
+    .dark-btn { background: #555; color: white; }
+
+    /* Dark Mode */
+    body.dark { background: #121212; color: #e0e0e0; }
+    body.dark header { background: #000; }
+</style>
+</head>
+
+<body>
+
+<header>
+    <div><b>RecordsAI Dashboard</b></div>
+
+    <nav>
+        <button class="profile-btn" onclick="window.location.href='profile.html'">Profile</button>
+        <button class="dark-btn" onclick="toggleDarkMode()">Dark Mode</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </nav>
+</header>
+
+<script>
+function logout() {
+    localStorage.removeItem("auth_token");
+    window.location.href = "login.html";
+}
+
+function toggleDarkMode() {
+    const theme = localStorage.getItem("theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("theme", theme);
+    applyTheme();
+}
+
+function applyTheme() {
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+    } else {
+        document.body.classList.remove("dark");
+    }
+}
+
+applyTheme();
+</script>
+
+</body>
+</html>

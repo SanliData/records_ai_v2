@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UPAP Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #fafafa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .section {
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.08);
+        }
+
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            overflow-x: auto;
+            border-radius: 4px;
+        }
+
+        .ad-banner {
+            width: 100%;
+            height: 120px;
+            background: #e8e8e8;
+            border: 1px dashed #aaa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .result-box {
+            border-left: 4px solid #4a90e2;
+            padding-left: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 18px;
+            font-size: 15px;
+        }
+    </style>
+
+    <script>
+        async function runUPAP() {
+            const file = document.getElementById("file").files[0];
+            const email = document.getElementById("email").value;
+
+            if (!file) {
+                alert("Select a file first.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("email", email);
+
+            const resp = await fetch("/upap/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await resp.json();
+            document.getElementById("pipeline_output").textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function validateUPAP() {
+            const resp = await fetch("/upap/validate");
+            const data = await resp.json();
+            document.getElementById("validation_output").textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function getRouterHealth() {
+            const resp = await fetch("/upap/router-health");
+            const data = await resp.json();
+            document.getElementById("router_health_output").textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</head>
+
+<body>
+
+<h1>UPAP Dashboard</h1>
+
+<div class="ad-banner">
+    <!-- Sen buraya istediğini yerleştirirsin -->
+    AD / REKLAM ALANI
+</div>
+
+<div class="section">
+    <h2>Upload File</h2>
+
+    <input type="file" id="file"><br><br>
+    <input type="email" id="email" placeholder="email@example.com"><br><br>
+
+    <button onclick="runUPAP()">Run UPAP Pipeline</button>
+
+    <div class="result-box">
+        <pre id="pipeline_output">{}</pre>
+    </div>
+</div>
+
+<div class="section">
+    <h2>UPAP Validation</h2>
+    <button onclick="validateUPAP()">Run Validation</button>
+
+    <div class="result-box">
+        <pre id="validation_output">{}</pre>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Router Health</h2>
+    <button onclick="getRouterHealth()">Check Router Status</button>
+
+    <div class="result-box">
+        <pre id="router_health_output">{}</pre>
+    </div>
+</div>
+
+</body>
+</html>

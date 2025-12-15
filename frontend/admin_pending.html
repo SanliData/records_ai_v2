@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin – Pending Records</title>
+
+<style>
+body {
+    background: #f5f7fa;
+    font-family: system-ui, sans-serif;
+}
+
+.header {
+    padding: 20px;
+    background: #111827;
+    color: white;
+}
+
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 5px 14px rgba(0,0,0,0.1);
+    margin-bottom: 18px;
+}
+
+button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.accept { background: #2e7d32; color: white; }
+.reject { background: #c62828; color: white; }
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+    <h2>Admin Panel – Pending Records</h2>
+</div>
+
+<div class="container" id="list"></div>
+
+<script>
+async function loadPending() {
+    let r = await fetch('/admin/pending');
+    let items = await r.json();
+    render(items);
+}
+
+function render(items) {
+    let el = document.getElementById('list');
+    el.innerHTML = '';
+
+    items.forEach(p => {
+        el.innerHTML += `
+            <div class="card">
+                <b>ID:</b> ${p.id || ""} <br>
+                <b>User:</b> ${p.user || ""} <br>
+                <b>Text:</b> ${p.text || ""} <br><br>
+
+                <button class="accept" onclick="approve('${p.id}')">Accept</button>
+                <button class="reject" onclick="reject('${p.id}')">Reject</button>
+            </div>
+        `;
+    });
+}
+
+async function approve(id) {
+    await fetch('/admin/approve/' + id, { method: 'POST' });
+    loadPending();
+}
+
+async function reject(id) {
+    await fetch('/admin/reject/' + id, { method: 'POST' });
+    loadPending();
+}
+
+loadPending();
+</script>
+
+</body>
+</html>

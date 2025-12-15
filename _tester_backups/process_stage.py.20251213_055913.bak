@@ -1,0 +1,43 @@
+﻿# -*- coding: utf-8 -*-
+"""
+ProcessStage – processes the uploaded file.
+
+For now this is a placeholder implementation.
+In a real system this might:
+- extract metadata
+- run ML models
+- compute audio/image features, etc.
+"""
+
+from typing import Any, Dict
+from pathlib import Path
+
+from backend.services.upap.engine.stage_interface import StageInterface
+
+
+class ProcessStage(StageInterface):
+    name = "process"
+
+    def validate_input(self, payload: Dict[str, Any]) -> None:
+        file_path = payload.get("file_path")
+        if not file_path or not isinstance(file_path, str):
+            raise ValueError("ProcessStage.run() requires 'file_path'")
+
+    def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        file_path_str: str = context["file_path"]
+        file_path = Path(file_path_str)
+
+        if not file_path.exists():
+            raise FileNotFoundError(f"ProcessStage: file not found: {file_path_str}")
+
+        # Placeholder "processing"
+        # You can extend this with real logic later.
+        result = {
+            "file_path": file_path_str,
+            "status": "processed",
+            "features": {
+                "size_bytes": file_path.stat().st_size,
+            },
+        }
+
+        return result

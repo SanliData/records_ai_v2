@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Records.AI Login</title>
+
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-box {
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            width: 320px;
+            box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 16px;
+            background: #1f73b7;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #155a8a;
+        }
+
+        .msg {
+            margin-top: 15px;
+            font-size: 14px;
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-box">
+    <h2>Login</h2>
+
+    <input id="email" type="text" placeholder="Email">
+
+    <button onclick="login()">Login</button>
+
+    <div id="msg" class="msg"></div>
+</div>
+
+
+<script>
+async function login() {
+    const email = document.getElementById("email").value.trim();
+    const msg = document.getElementById("msg");
+
+    if (!email) {
+        msg.textContent = "Enter your email.";
+        return;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append("email", email);
+
+    const res = await fetch("http://127.0.0.1:8000/auth/login/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData
+    });
+
+    if (!res.ok) {
+        msg.textContent = "Login failed.";
+        return;
+    }
+
+    const data = await res.json();
+
+    localStorage.setItem("auth_token", data.token);
+
+    window.location.href = "complete_dashboard.html";
+}
+</script>
+
+</body>
+</html>

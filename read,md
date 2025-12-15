@@ -1,0 +1,12 @@
+## Live Project Book
+
+The full system architecture, service documentation, and design flow are stored in:
+
+`/docs/LIVE_PROJECT_BOOK.md`
+
+Generated outputs:
+- HTML: /docs/LIVE_PROJECT_BOOK.html
+- Word: /docs/LIVE_PROJECT_BOOK.docx
+
+To regenerate:
+    python scripts/build_docs.py

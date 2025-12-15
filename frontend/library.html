@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<title>Your Library – RecordsAI</title>
+
+<style>
+body {
+    background: #f5f7fa;
+    font-family: system-ui, sans-serif;
+}
+
+.header {
+    padding: 20px;
+    background: #1f2937;
+    color: white;
+}
+
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+}
+
+.search-bar {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 5px 14px rgba(0,0,0,0.1);
+    margin-bottom: 18px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class='header'>
+    <h2>Your Library</h2>
+</div>
+
+<div class='container'>
+    <input id='search' placeholder='Search library...' class='search-bar' oninput='filter()'>
+
+    <div id='records'></div>
+</div>
+
+<script>
+async function loadLibrary() {
+    let r = await fetch('/library/1');
+    let data = await r.json();
+    window.library = data.records;
+    render(data.records);
+}
+
+function render(list) {
+    let el = document.getElementById('records');
+    el.innerHTML = '';
+
+    list.forEach(rec => {
+        el.innerHTML += 
+            <div class='card'>
+                <b> – </b><br>
+                <small></small>
+            </div>
+        ;
+    });
+}
+
+function filter() {
+    let q = document.getElementById('search').value.toLowerCase();
+    let filtered = window.library.filter(r =>
+        r.artist.toLowerCase().includes(q) ||
+        r.album.toLowerCase().includes(q) ||
+        r.text.toLowerCase().includes(q)
+    );
+    render(filtered);
+}
+
+loadLibrary();
+</script>
+
+</body>
+</html>
