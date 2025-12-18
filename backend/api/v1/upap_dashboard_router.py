@@ -1,26 +1,18 @@
-# -*- coding: utf-8 -*-
-"""
-UPAP Dashboard Router (HTML renderer)
-Simplest possible — no heavy frontend.
-"""
+﻿from fastapi import APIRouter
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+router = APIRouter(
+    prefix="/upap/dashboard",
+    tags=["upap-dashboard"],
+)
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
-
-templates = Jinja2Templates(directory="backend/templates")
-
-
-@router.get("/", response_class=HTMLResponse)
-async def show_dashboard(request: Request):
-    """
-    Render the static UPAP dashboard HTML.
-    """
-    return templates.TemplateResponse(
-        "upap_dashboard.html",
-        {
-            "request": request
-        }
-    )
+@router.get("/summary")
+def dashboard_summary():
+    return {
+        "status": "ok",
+        "scope": "system",
+        "records_total": 0,
+        "users_total": 0,
+        "pending_recognition": 0,
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+    }

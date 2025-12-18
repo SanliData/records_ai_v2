@@ -1,16 +1,39 @@
 # -*- coding: utf-8 -*-
 """
-UploadStage – stores the uploaded file on disk under storage/uploads/{user_id}/
+UploadStage
+------------
+Stores uploaded file on disk under:
+storage/uploads/{user_id}/{filename}
+
+Deploy-safe:
+- No dependency on tester / local-only modules
 """
 
-from tester.hooks import after_validation
 from typing import Any, Dict
 from pathlib import Path
+import os
 
 from backend.services.upap.engine.stage_interface import StageInterface
 
 
+def _after_validation_hook(payload: dict) -> None:
+    """
+    Optional hook for local/testing environments.
+    Disabled by default in production / Docker.
+    """
+    if os.getenv("ENABLE_TEST_HOOKS") == "1":
+        try:
+            from tester.hooks import after_validation  # local-only
+            after_validation(payload)
+        except Exception:
+            # Never break pipeline due to hooks
+            pass
+
+
 class UploadStage(StageInterface):
+    """
+    UPAP Upload Stage
+    """
     name = "upload"
 
     def validate_input(self, payload: Dict[str, Any]) -> None:
@@ -30,12 +53,16 @@ class UploadStage(StageInterface):
         base_dir.mkdir(parents=True, exist_ok=True)
 
         target_path = base_dir / filename
-
         with target_path.open("wb") as f:
             f.write(file_bytes)
 
+        _after_validation_hook({
+            "pipeline": "UPAP",
+            "stage": "upload",
+            "schema": "pending_record",
+            "status": "PASS",
+        })
 
-        after_validation({'pipeline': 'UPAP', 'stage': 'upload', 'schema': 'pending_record', 'status': 'PASS'})
         return {
             "saved_to": str(target_path),
             "size_bytes": len(file_bytes),

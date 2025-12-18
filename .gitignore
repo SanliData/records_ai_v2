@@ -5,3 +5,32 @@
 venv/
 storage/uploads/
 live_book/
+# Secrets / keys
+*.json
+*.key
+*.pem
+.env
+records-ai-runtime-key.json
+sa-key.json
+
+# Databases
+*.db
+
+# Uploads / runtime data
+uploads/
+storage/
+media/
+data/
+
+# Tests & local artifacts
+test_*.txt
+archive.json
+process.json
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db

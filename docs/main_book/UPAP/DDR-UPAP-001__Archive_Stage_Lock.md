@@ -1,0 +1,27 @@
+﻿# UPAP v1 — Archive Stage Lock
+Design Decision Record (DDR-UPAP-001)
+
+Status: Binding / Irreversible
+
+---<h1>UPAP v1 — Archive Stage Lock</h1>
+<h3>Design Decision Record (DDR-UPAP-001)</h3>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UPAP v1 – Archive Stage Lock</title>
+  <meta name="version" content="DDR-UPAP-001">
+</head>
+<body>
+
+<h1>UPAP v1 — Archive Stage Lock</h1>
+<h3>Design Decision Record (DDR-UPAP-001)</h3>
+
+<p><strong>Status:</strong> Binding / Irreversible</p>
+
+<!-- Buraya DDR-UPAP-001 metni aynen girilir -->
+
+</body>
+</html>
+
+

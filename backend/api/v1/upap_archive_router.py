@@ -1,23 +1,14 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 UPAP Archive Router
-HTTP contract for archive-related operations.
-
-Note:
-The core UPAPEngine currently defines stages:
-- upload
-- process
-- publish
-
-There is an ArchiveStage implementation under services, but
-it is not registered on the engine. This router exposes
-a placeholder API and returns 501 until the stage wiring
-is finalized at engine level.
 """
 
-from typing import Any, Dict
+from typing import Dict, Any
 
 from fastapi import APIRouter, Form, HTTPException
+
+from backend.services.upap.engine.upap_engine import upap_engine
+
 
 router = APIRouter(
     prefix="/archive",
@@ -25,21 +16,37 @@ router = APIRouter(
 )
 
 
-@router.post(
-    "",
-    summary="Archive a processed record (not wired to engine yet).",
-)
+@router.post("", summary="Archive a processed record")
 async def archive_record(
     record_id: str = Form(..., description="Identifier of the record to archive."),
 ) -> Dict[str, Any]:
-    """
-    Placeholder archive endpoint.
+    try:
+        # Load process result from state (created during process stage)
+        state = upap_engine.get_stage("archive").store.load_state(record_id)
 
-    Once ArchiveStage is registered on the engine, this will:
-    - Build a payload with record_id.
-    - Delegate to the archive stage.
-    """
-    raise HTTPException(
-        status_code=501,
-        detail="UPAP archive stage is not wired to the engine yet.",
-    )
+        if not state or "archive_record" not in state:
+            raise HTTPException(
+                status_code=400,
+                detail="Record must be processed before archiving.",
+            )
+
+        process_result = state["archive_record"].get("process_result")
+        if not process_result:
+            # Fallback: minimal archive
+            process_result = {}
+
+        return upap_engine.run_stage(
+            "archive",
+            {
+                "record_id": record_id,
+                "process_result": process_result,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        )

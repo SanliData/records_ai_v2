@@ -1,39 +1,40 @@
 ﻿# -*- coding: utf-8 -*-
 """
-ArchiveStage – creates an archive record from the process result.
-
-For now this is an in-memory / placeholder implementation.
-Later it can write to a database (ArchiveRecord model).
+ArchiveStage
+------------
+Creates a durable archive record from a processed record_id.
 """
 
-from tester.hooks import after_validation
-from typing import Any, Dict
-import uuid
+from typing import Dict, Any
 
 from backend.services.upap.engine.stage_interface import StageInterface
+from backend.services.upap.archive.archive_store import ArchiveStore
 
 
 class ArchiveStage(StageInterface):
     name = "archive"
 
+    def __init__(self) -> None:
+        self.store = ArchiveStore()
+
     def validate_input(self, payload: Dict[str, Any]) -> None:
+        if "record_id" not in payload:
+            raise ValueError("ArchiveStage requires 'record_id'")
         if "process_result" not in payload:
-            raise ValueError("ArchiveStage: 'process_result' missing in context")
+            raise ValueError("ArchiveStage requires 'process_result'")
 
     def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        record_id: str = context["record_id"]
         process_result: Dict[str, Any] = context["process_result"]
 
-        archive_id = str(uuid.uuid4())
+        archive_record = self.store.create_archive(
+            record_id=record_id,
+            process_result=process_result,
+        )
 
-        archive_record = {
-            "archive_id": archive_id,
-            "status": "archived",
-            "source": process_result.get("file_path"),
-            "meta": {
-                "features": process_result.get("features", {}),
-            },
+        return {
+            "stage": "archive",
+            "status": "ok",
+            "record_id": record_id,
+            "archive_record": archive_record,
         }
-
-
-        after_validation({'pipeline': 'UPAP', 'stage': 'archive', 'schema': 'archive_record', 'status': 'PASS'})
-        return archive_record
