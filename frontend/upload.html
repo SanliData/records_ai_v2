@@ -4,14 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Upload Your Record – Novitsky Archive</title>
+    <title>Preview Your Record – Novitsky Archive</title>
 
     <!-- ADSENSE -->
     <script async 
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8479820649403103"
         crossorigin="anonymous"></script>
 
-    <!-- STYLES -->
     <style>
         body {
             margin: 0;
@@ -48,16 +47,13 @@
             color: #222;
         }
 
-        .file-input {
-            margin-top: 20px;
-        }
-
-        input[type="file"] {
-            padding: 12px;
-            width: 100%;
-            margin-top: 8px;
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 14px;
             border-radius: 6px;
-            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            font-size: 14px;
         }
 
         button {
@@ -85,18 +81,13 @@
             line-height: 1.5;
         }
 
-        /* Right-side advertisement panel */
         .ad-panel {
             flex: 1;
-            background: transparent;
         }
 
         @media (max-width: 900px) {
             .container {
                 flex-direction: column;
-            }
-            .ad-panel {
-                order: -1;
             }
         }
     </style>
@@ -105,28 +96,27 @@
 <body>
 
 <header>
-    NOVITSKY ARCHIVE – Upload Record
+    NOVITSKY ARCHIVE – Preview Record
 </header>
 
 <div class="container">
 
-    <!-- UPLOAD PANEL -->
     <div class="upload-box">
-        <h2>Upload a Record Image</h2>
-        <p>Select a JPEG image of a vinyl label or cover. The analysis engine will extract runouts, metadata, and classify the record.</p>
+        <h2>Upload for Preview</h2>
 
-        <div class="file-input">
-            <input type="file" id="fileInput" accept="image/jpeg,image/png" />
+        <div class="warning">
+            This upload creates a <strong>temporary preview</strong>.  
+            The record is <strong>not saved or published</strong> unless you explicitly confirm.
         </div>
 
-        <button onclick="uploadRecord()">Upload & Analyze</button>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png" />
+
+        <button onclick="uploadPreview()">Upload for Preview</button>
 
         <div id="result" class="result-box" style="display:none;"></div>
     </div>
 
-    <!-- ADVERTISEMENT PANEL -->
     <div class="ad-panel">
-        <!-- Right-side tall ad -->
         <ins class="adsbygoogle"
             style="display:block; width:300px; height:600px;"
             data-ad-client="ca-pub-8479820649403103"
@@ -138,9 +128,8 @@
 
 </div>
 
-<!-- UPLOAD LOGIC -->
 <script>
-async function uploadRecord() {
+async function uploadPreview() {
     const fileInput = document.getElementById("fileInput");
 
     if (!fileInput.files.length) {
@@ -148,25 +137,23 @@ async function uploadRecord() {
         return;
     }
 
-    const file = fileInput.files[0];
-
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileInput.files[0]);
 
     try {
-        const response = await fetch("https://novitskyarchive.com/api/analyze/upload", {
-            method: "POST",
-            body: formData
-        });
+        const response = await fetch(
+            "https://novitskyarchive.com/api/v1/upap/preview/upload",
+            { method: "POST", body: formData }
+        );
 
         const data = await response.json();
 
-        const resultBox = document.getElementById("result");
-        resultBox.style.display = "block";
-        resultBox.innerText = JSON.stringify(data, null, 4);
+        const box = document.getElementById("result");
+        box.style.display = "block";
+        box.innerText = JSON.stringify(data, null, 2);
 
     } catch (err) {
-        alert("Upload failed. Check console.");
+        alert("Preview upload failed.");
         console.error(err);
     }
 }
