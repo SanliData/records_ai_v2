@@ -2,101 +2,297 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Records.AI Login</title>
-
+    <title>Sign In with Google – Records_AI</title>
     <style>
         body {
-            background: #f5f7fa;
-            font-family: system-ui, sans-serif;
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f7f7f7;
+        }
+
+        header {
+            background: #111;
+            color: #fff;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
+            min-height: calc(100vh - 200px);
+            padding: 40px;
         }
 
         .login-box {
             background: #fff;
-            padding: 32px;
+            padding: 40px;
             border-radius: 12px;
-            width: 320px;
-            box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
             text-align: center;
         }
 
-        input {
-            width: 90%;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 16px;
+        h2 {
+            margin-top: 0;
+            color: #222;
+            text-align: center;
         }
 
-        button {
-            margin-top: 16px;
-            background: #1f73b7;
-            border: none;
-            padding: 10px 20px;
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
+        .info-text {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        #google-signin-button {
+            margin-top: 20px;
             width: 100%;
-            font-size: 16px;
-        }
-
-        button:hover {
-            background: #155a8a;
+            display: flex;
+            justify-content: center;
         }
 
         .msg {
             margin-top: 15px;
             font-size: 14px;
             color: red;
+            text-align: center;
+        }
+
+        .success-msg {
+            color: #4caf50;
+        }
+
+        footer {
+            background: #fff;
+            padding: 30px 40px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        footer p {
+            margin: 8px 0;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 16px 20px;
+                flex-wrap: wrap;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .header-nav {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                gap: 8px;
+                margin-top: 16px;
+                padding-top: 16px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .header-nav.active {
+                display: flex;
+            }
+
+            .header-nav a {
+                width: 100%;
+                text-align: center;
+                padding: 12px 16px;
+            }
+
+            .container {
+                padding: 40px 20px;
+            }
+
+            .login-box {
+                padding: 32px 24px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            footer {
+                padding: 24px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 24px 20px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .info-text {
+                font-size: 13px;
+            }
         }
     </style>
 </head>
-
 <body>
 
-<div class="login-box">
-    <h2>Login</h2>
+<header>
+    <div class="header-title">RECORDS_AI</div>
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    <nav class="header-nav" id="mobileNav">
+        <a href="index.html">Home</a>
+        <a href="upload.html">Upload & Analyze</a>
+        <a href="login.html">Sign In</a>
+    </nav>
+</header>
 
-    <input id="email" type="text" placeholder="Email">
+<div class="container">
+    <div class="login-box">
+        <h2>Sign In with Google</h2>
+        <p class="info-text">
+            Please sign in with your Google account to access your personal archive.
+            Authentication is required to save records to your collection.
+        </p>
 
-    <button onclick="login()">Login</button>
+        <div id="google-signin-button"></div>
 
-    <div id="msg" class="msg"></div>
+        <div id="msg" class="msg"></div>
+    </div>
 </div>
 
+<footer>
+    <p><strong>Records_AI (UPAP Tabanlı Arşivleme Platformu)</strong></p>
+    <p>Developed and owned by Merve Emecan Sanli</p>
+    <p style="margin-top: 20px; font-size: 12px; color: #999;">
+        This platform uses a guidance GPT interface for educational and explanatory purposes.
+        Backend operations are handled separately. Errors are reported honestly without retry or masking.
+    </p>
+</footer>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-async function login() {
-    const email = document.getElementById("email").value.trim();
-    const msg = document.getElementById("msg");
+// Mobile menu toggle
+function toggleMobileMenu() {
+    const nav = document.getElementById('mobileNav');
+    nav.classList.toggle('active');
+}
 
-    if (!email) {
-        msg.textContent = "Enter your email.";
-        return;
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(event) {
+    const nav = document.getElementById('mobileNav');
+    const toggle = document.querySelector('.mobile-menu-toggle');
+    if (nav && toggle && !nav.contains(event.target) && !toggle.contains(event.target)) {
+        nav.classList.remove('active');
     }
+});
 
-    const formData = new URLSearchParams();
-    formData.append("email", email);
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:8000'
+    : 'https://api.zyagrolia.com';
 
-    const res = await fetch("http://127.0.0.1:8000/auth/login/request", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData
+window.onload = function() {
+    google.accounts.id.initialize({
+        client_id: 'YOUR_GOOGLE_CLIENT_ID', // TODO: Replace with actual Google Client ID
+        callback: handleCredentialResponse
     });
 
-    if (!res.ok) {
-        msg.textContent = "Login failed.";
-        return;
+    google.accounts.id.renderButton(
+        document.getElementById("google-signin-button"),
+        {
+            theme: "outline",
+            size: "large",
+            width: "100%",
+            text: "signin_with",
+            locale: "en"
+        }
+    );
+};
+
+async function handleCredentialResponse(response) {
+    const msg = document.getElementById("msg");
+    msg.textContent = "Signing in...";
+    msg.classList.remove("success-msg");
+
+    try {
+        // Send Google token to backend
+        const res = await fetch(`${API_BASE}/auth/login/google`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                token: response.credential
+            })
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.detail || "Google authentication failed");
+        }
+
+        const data = await res.json();
+
+        // Store auth token and email
+        localStorage.setItem("auth_token", data.token);
+        localStorage.setItem("user_email", data.email);
+
+        msg.textContent = "Success! Redirecting...";
+        msg.classList.add("success-msg");
+
+        // Redirect to previous page or home
+        const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
+        setTimeout(() => {
+            window.location.href = returnUrl;
+        }, 1000);
+
+    } catch (err) {
+        msg.textContent = `Login failed: ${err.message}`;
+        msg.classList.remove("success-msg");
+        console.error("Google login error:", err);
     }
-
-    const data = await res.json();
-
-    localStorage.setItem("auth_token", data.token);
-
-    window.location.href = "complete_dashboard.html";
 }
 </script>
 

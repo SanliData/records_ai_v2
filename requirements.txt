@@ -7,3 +7,6 @@ Pillow
 pytesseract
 python-dotenv
 jinja2
+requests
+opencv-python
+numpy

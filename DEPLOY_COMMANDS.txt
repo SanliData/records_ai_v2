@@ -1,0 +1,53 @@
+# Cloud Shell'de Çalıştırılacak Komutlar
+# Bu dosyayı Cloud Shell'de açıp komutları sırayla çalıştırın
+
+# 1. Proje dizinine gidin
+cd ~/records_ai_v2
+
+# 2. Dosyaları kontrol edin
+ls -la main.py Procfile runtime.txt backend/main.py
+
+# 3. main.py wrapper oluşturun (eğer yoksa)
+cat > main.py << 'EOFMAIN'
+"""
+Root entrypoint wrapper for Cloud Run buildpacks.
+This file allows the Python buildpack to detect the application entrypoint.
+"""
+import sys
+import os
+
+# Add backend to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
+
+# Import and run the actual application
+from backend.main import app
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+EOFMAIN
+
+# 4. Procfile oluşturun (eğer yoksa)
+echo "web: uvicorn backend.main:app --host 0.0.0.0 --port \$PORT" > Procfile
+
+# 5. runtime.txt oluşturun (eğer yoksa)
+echo "python-3.11" > runtime.txt
+
+# 6. Deploy edin
+gcloud run deploy records-ai-v2 \
+  --source . \
+  --platform managed \
+  --region europe-west1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --project records-ai
+
+# 7. Service URL'i alın
+gcloud run services describe records-ai-v2 \
+  --region europe-west1 \
+  --format "value(status.url)" \
+  --project records-ai
+
+
+

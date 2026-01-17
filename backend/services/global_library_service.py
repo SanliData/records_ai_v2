@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-# ======================================================
-# DEPRECATED – Replaced by the UPAP pipeline
-# Do NOT use. Scheduled for removal in V2 cleanup.
-# ======================================================
+"""
+Global Library Service
+Central archive for all vinyl records. Every record is first added here,
+then referenced by user libraries. Records persist in global archive even
+if users delete them from their personal collections.
+"""
 import hashlib
 import json
 import time
@@ -46,23 +48,41 @@ class GlobalLibraryService:
     def _build_fingerprint(self, metadata: Dict[str, Any]) -> str:
         """
         Build a deterministic fingerprint from core vinyl fields.
-
-        This allows us to:
-        - Detect duplicates
-        - Return the same global record for the same vinyl, even if
-          uploaded by different users.
+        
+        UNIQUENESS RULES:
+        - Same artist + album + label + year + catalog_number + country + format + barcode = SAME PLAK (same fingerprint)
+        - Different label, year, catalog_number, country, format, or barcode = DIFFERENT SURUM/BASKI = DIFFERENT PLAK (different fingerprint)
+        
+        This ensures:
+        - One unique record per vinyl release in global archive (deduplication)
+        - Different pressings/versions are treated as separate records
+        - Same record uploaded by different users maps to the same global entry
+        
+        Fingerprint includes (in order):
+        1. artist - Artist name
+        2. album - Album/title name
+        3. title - Alternative title field (fallback for album)
+        4. label - Record label (different label = different pressing)
+        5. year - Release year (different year = different pressing)
+        6. catalog_number - Catalog number (different cat# = different pressing)
+        7. catalog - Alternative catalog field
+        8. barcode - Barcode (different barcode = different pressing)
+        9. country - Release country (different country = different pressing)
+        10. format - Record format (LP, CD, etc.) (different format = different release)
         """
+        # Core fields that define uniqueness
+        # Order matters: fields are processed in sequence for consistent hashing
         core_keys = [
-            "artist",
-            "album",
-            "title",           # some pipelines may use 'title' instead of 'album'
-            "label",
-            "year",
-            "catalog_number",
-            "catalog",
-            "barcode",
-            "country",
-            "format",
+            "artist",          # Primary identifier
+            "album",           # Primary identifier
+            "title",           # Fallback/alternative for album
+            "label",           # Pressing identifier (different label = different pressing)
+            "year",            # Pressing identifier (different year = different pressing)
+            "catalog_number",  # Pressing identifier (different cat# = different pressing)
+            "catalog",         # Alternative catalog field
+            "barcode",         # Pressing identifier (different barcode = different pressing)
+            "country",         # Pressing identifier (different country = different pressing)
+            "format",          # Release identifier (different format = different release)
         ]
 
         pieces = []
@@ -70,7 +90,7 @@ class GlobalLibraryService:
             pieces.append(self._normalize_value(metadata.get(key)))
 
         raw = "|".join(pieces)
-        # Stable hash for fingerprint
+        # Stable SHA-256 hash for deterministic fingerprint
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     def _find_by_fingerprint(self, fingerprint: str) -> Optional[Dict[str, Any]]:
@@ -86,19 +106,32 @@ class GlobalLibraryService:
         self,
         metadata: Dict[str, Any],
         source: str = "user_upload",
+        additional_fields: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Insert a record into the global library if it does not exist yet.
-        If an equivalent record already exists (same fingerprint), return it.
-
-        This function is idempotent for the same metadata.
+        If an equivalent record already exists (same fingerprint), return the existing record.
+        
+        UNIQUENESS GUARANTEE:
+        - Each unique combination of artist, album, label, year, catalog_number, 
+          country, format, and barcode creates ONE global record
+        - Different pressings/versions (different label, year, cat#, etc.) 
+          create SEPARATE global records
+        - Same pressing uploaded by different users maps to the SAME global record
+        
+        This function is idempotent: same metadata = same fingerprint = same global record.
+        Additional fields (pricing_data, file_path, etc.) are merged into the record.
         """
         fingerprint = self._build_fingerprint(metadata)
         existing = self._find_by_fingerprint(fingerprint)
 
         if existing is not None:
+            # Merge additional fields if provided (e.g., pricing_data, file_path)
+            if additional_fields:
+                existing.update(additional_fields)
             return existing
 
+        # Create new global record
         record = {
             "id": self._next_id,
             "fingerprint": fingerprint,
@@ -107,9 +140,21 @@ class GlobalLibraryService:
             "created_at": time.time(),
         }
 
+        # Add additional fields if provided
+        if additional_fields:
+            record.update(additional_fields)
+
         self._records.append(record)
         self._next_id += 1
         return record
+    
+    def get_by_fingerprint(self, fingerprint: str) -> Optional[Dict[str, Any]]:
+        """Get global record by fingerprint."""
+        return self._find_by_fingerprint(fingerprint)
+    
+    def get_by_global_id(self, global_id: int) -> Optional[Dict[str, Any]]:
+        """Get global record by global ID."""
+        return self.get_by_id(global_id)
 
     def get_by_id(self, record_id: int) -> Optional[Dict[str, Any]]:
         for rec in self._records:

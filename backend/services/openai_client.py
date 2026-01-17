@@ -17,9 +17,9 @@ from openai import OpenAI
 
 class OpenAIVisionClient:
     def __init__(self):
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("proj_kC4kttheJQf0J7LL80C9Q5n0")
         if not api_key:
-            raise RuntimeError("OPENAI_API_KEY is not set")
+            raise RuntimeError("proj_kC4kttheJQf0J7LL80C9Q5n0")
         self.client = OpenAI(api_key=api_key)
 
     def _encode_image(self, file_path: Path | str, raw_bytes: Optional[bytes]) -> str:

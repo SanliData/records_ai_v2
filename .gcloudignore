@@ -1,0 +1,136 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# Environment
+.env
+.env.local
+.env.*
+*.key
+*.pem
+*-key.json
+sa-key.json
+records-ai-runtime-key.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+records*.db
+
+# Logs
+*.log
+occurrences.log
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+.coverage.*
+*.cover
+
+# Backup files
+*.bak
+*_backups/
+_tester_backups/
+
+# Documentation (not needed in production, keep only README)
+*.md
+!README.md
+!requirements.txt
+
+# Large files and media
+*.heic
+*.HEIC
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+test*.jpg
+test*.png
+test*.jpeg
+test.jpg
+test.png
+*.mp4
+*.avi
+*.mov
+
+# Data directories (local test data)
+data/
+media/
+uploads/
+archive_data/
+corrupted.bin
+
+# Storage (runtime data, not needed in build)
+storage/uploads/
+storage/thumbnails/
+storage/archive/
+storage/state/
+
+# Scripts (not needed in production)
+scripts/
+*.ps1
+*.sh
+!deploy.ps1
+
+# Test files
+tests/
+tester/
+*.test.py
+*_test.py
+
+# Temp files
+*.tmp
+temp/
+tmp/
+*.cache
+
+# Build artifacts
+*.egg
+*.whl
+tree*.txt
+
+# Documentation
+docs/
+live_book/
+*.txt
+!requirements.txt
+
+# Markers and config files (not needed)
+*.update_marker
+.tester_*
+.records_ai_*
+
+# Large binary files
+*.bin
+corrupted.bin

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Save to Archive – Records_AI</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f7f7f7;
+        }
+
+        header {
+            background: #111;
+            color: #fff;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 40px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #222;
+        }
+
+        .auth-required {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .auth-required strong {
+            color: #856404;
+        }
+
+        .record-preview {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .record-preview-item {
+            margin: 10px 0;
+        }
+
+        .record-preview-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .record-preview-value {
+            color: #222;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        .upap-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .upap-info strong {
+            color: #1976d2;
+        }
+
+        .upap-steps {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .upap-steps li {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #111;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #333;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #222;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #2e7d32;
+            display: none;
+        }
+
+        .success-box.active {
+            display: block;
+        }
+
+        .error-box {
+            background: #ffe0e0;
+            border-left: 4px solid #d00;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #c00;
+            display: none;
+        }
+
+        .error-box.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        footer {
+            background: #fff;
+            padding: 30px 40px;
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        footer p {
+            margin: 8px 0;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .container {
+                padding: 0 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-title">RECORDS_AI</div>
+    <nav class="header-nav">
+        <a href="index.html">Home</a>
+        <a href="upload.html">Upload & Analyze</a>
+        <a href="login.html">Sign In / Sign Up</a>
+    </nav>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h1>Save to Archive</h1>
+
+        <div id="authRequired" class="auth-required">
+            <strong>Authentication Required</strong><br>
+            You must be signed in to save records to your personal archive. 
+            <a href="login.html">Sign in or create an account</a> to continue.
+        </div>
+
+        <div id="saveForm" style="display: none;">
+            <div class="upap-info">
+                <strong>UPAP Pipeline: Archive Stage</strong><br>
+                Saving this record will move it through the UPAP pipeline:
+                <ol class="upap-steps">
+                    <li><strong>Upload</strong> – Already completed</li>
+                    <li><strong>Process</strong> – Already completed</li>
+                    <li><strong>Archive</strong> – This step (saving to your archive)</li>
+                    <li><strong>Publish</strong> – Available after archiving (optional)</li>
+                </ol>
+            </div>
+
+            <div id="recordPreview" class="record-preview">
+                <div class="record-preview-item">
+                    <div class="record-preview-label">Record ID</div>
+                    <div class="record-preview-value" id="previewRecordId">Loading...</div>
+                </div>
+            </div>
+
+            <div class="error-box" id="errorBox"></div>
+            <div class="success-box" id="successBox"></div>
+            <div class="loading" id="loading">Saving to archive...</div>
+
+            <div class="actions">
+                <button id="saveBtn" class="btn btn-primary" onclick="saveToArchive()">Save to Archive</button>
+                <a href="index.html" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p><strong>Records_AI (UPAP Tabanlı Arşivleme Platformu)</strong></p>
+    <p>Developed and owned by Merve Emecan Sanli</p>
+    <p style="margin-top: 20px; font-size: 12px; color: #999;">
+        This platform uses a guidance GPT interface for educational and explanatory purposes.
+        Backend operations are handled separately. Errors are reported honestly without retry or masking.
+    </p>
+</footer>
+
+<script>
+let currentRecordId = null;
+let currentRecordData = null;
+let userEmail = null;
+
+function getUrlParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+function checkAuth() {
+    const token = localStorage.getItem('auth_token');
+    const email = localStorage.getItem('user_email');
+    
+    if (!token || !email) {
+        document.getElementById('authRequired').style.display = 'block';
+        document.getElementById('saveForm').style.display = 'none';
+        return false;
+    }
+    
+    userEmail = email;
+    document.getElementById('authRequired').style.display = 'none';
+    document.getElementById('saveForm').style.display = 'block';
+    return true;
+}
+
+function loadRecordPreview() {
+    currentRecordId = getUrlParameter('record_id');
+    
+    if (!currentRecordId) {
+        document.getElementById('errorBox').textContent = 'No record ID provided.';
+        document.getElementById('errorBox').classList.add('active');
+        return;
+    }
+
+    document.getElementById('previewRecordId').textContent = currentRecordId;
+
+    // Try to load record data from sessionStorage
+    const storedResult = sessionStorage.getItem(`result_${currentRecordId}`);
+    if (storedResult) {
+        try {
+            currentRecordData = JSON.parse(storedResult);
+            renderRecordPreview(currentRecordData);
+        } catch (e) {
+            console.error('Failed to parse stored result:', e);
+        }
+    }
+}
+
+function renderRecordPreview(data) {
+    const preview = document.getElementById('recordPreview');
+    
+    let html = `
+        <div class="record-preview-item">
+            <div class="record-preview-label">Record ID</div>
+            <div class="record-preview-value">${currentRecordId}</div>
+        </div>
+    `;
+
+    if (data.artist) {
+        html += `
+            <div class="record-preview-item">
+                <div class="record-preview-label">Artist</div>
+                <div class="record-preview-value">${data.artist}</div>
+            </div>
+        `;
+    }
+
+    if (data.album || data.title) {
+        html += `
+            <div class="record-preview-item">
+                <div class="record-preview-label">Album / Title</div>
+                <div class="record-preview-value">${data.album || data.title || '—'}</div>
+            </div>
+        `;
+    }
+
+    if (data.label) {
+        html += `
+            <div class="record-preview-item">
+                <div class="record-preview-label">Label</div>
+                <div class="record-preview-value">${data.label}</div>
+            </div>
+        `;
+    }
+
+    if (data.year) {
+        html += `
+            <div class="record-preview-item">
+                <div class="record-preview-label">Year</div>
+                <div class="record-preview-value">${data.year}</div>
+            </div>
+        `;
+    }
+
+    preview.innerHTML = html;
+}
+
+async function saveToArchive() {
+    const saveBtn = document.getElementById('saveBtn');
+    const loading = document.getElementById('loading');
+    const errorBox = document.getElementById('errorBox');
+    const successBox = document.getElementById('successBox');
+
+    if (!currentRecordId) {
+        errorBox.textContent = 'No record ID available.';
+        errorBox.classList.add('active');
+        return;
+    }
+
+    if (!userEmail) {
+        errorBox.textContent = 'Please sign in first.';
+        errorBox.classList.add('active');
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Reset UI
+    errorBox.classList.remove('active');
+    successBox.classList.remove('active');
+    saveBtn.disabled = true;
+    loading.classList.add('active');
+
+    try {
+        const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://127.0.0.1:8000'
+            : 'https://api.zyagrolia.com';
+
+        const formData = new FormData();
+        formData.append('record_id', currentRecordId);
+        formData.append('email', userEmail);
+        
+        if (currentRecordData) {
+            formData.append('record_data', JSON.stringify(currentRecordData));
+        }
+
+        const response = await fetch(`${apiBase}/upap/archive/add`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to save: ${response.status} ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        successBox.innerHTML = `
+            <strong>Record Saved Successfully!</strong><br>
+            Your record has been added to your personal archive through the UPAP Archive stage.<br>
+            <a href="library.html">View Your Archive</a> | 
+            <a href="index.html">Back to Home</a>
+        `;
+        successBox.classList.add('active');
+
+        // Clear stored result since it's now archived
+        sessionStorage.removeItem(`result_${currentRecordId}`);
+
+    } catch (err) {
+        errorBox.textContent = `Failed to save to archive: ${err.message}`;
+        errorBox.classList.add('active');
+        console.error(err);
+    } finally {
+        saveBtn.disabled = false;
+        loading.classList.remove('active');
+    }
+}
+
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', () => {
+    if (checkAuth()) {
+        loadRecordPreview();
+    }
+});
+</script>
+
+</body>
+</html>
+
+
+

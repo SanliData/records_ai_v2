@@ -1,0 +1,65 @@
+records_ai_v2/
+├── backend/
+│   ├── api/
+│   │   └── v1/
+│   │       ├── upap_upload_router.py
+│   │       ├── upap_process_router.py
+│   │       ├── upap_archive_router.py
+│   │       ├── upap_archive_add_router.py
+│   │       ├── upap_preview_router.py
+│   │       ├── upap_publish_router.py
+│   │       ├── upap_recognition_router.py
+│   │       ├── upap_dashboard_router.py
+│   │       ├── upap_system_archive_router.py
+│   │       ├── auth_router.py
+│   │       └── dashboard_router.py
+│   ├── services/
+│   │   └── upap/
+│   │       ├── engine/
+│   │       │   ├── upap_engine.py
+│   │       │   ├── upap_validation.py
+│   │       │   └── stage_interface.py
+│   │       ├── upload/
+│   │       │   └── upload_stage.py
+│   │       ├── process/
+│   │       │   └── process_stage.py
+│   │       ├── archive/
+│   │       │   ├── archive_stage.py
+│   │       │   └── archive_store.py
+│   │       ├── publish/
+│   │       │   ├── publish_stage.py
+│   │       │   └── publish_store.py
+│   │       ├── ocr/
+│   │       │   └── ocr_stage.py (optional, ENV gated)
+│   │       └── ai/
+│   │           └── ai_stage.py (optional, ENV gated)
+│   ├── models/
+│   │   ├── preview_record.py
+│   │   ├── archive_record.py
+│   │   └── user.py
+│   └── main.py
+├── frontend/
+│   ├── index.html (NEW - Home page)
+│   ├── upload.html (UPDATED - Anonymous upload, UPAP compliant)
+│   ├── results.html (NEW - Results preview)
+│   ├── archive-save.html (NEW - Archive save, auth required)
+│   ├── login.html (UPDATED - Navigation added)
+│   └── library.html
+├── scripts/
+│   ├── build_live_book.py
+│   └── upap_cli.py
+├── docs/
+│   ├── main_book/
+│   │   └── UPAP/
+│   │       └── DDR-UPAP-001__Archive_Stage_Lock.md
+│   └── live_book/
+│       └── upap/
+├── live_book/
+│   └── records_ai_live_book_*.txt
+├── UPAP_COMPATIBILITY_NOTES.md (NEW)
+├── GITHUB_SYNC_NOTES.md (NEW)
+├── DEPLOYMENT_STATUS.md (NEW)
+└── README.md (UPDATED)
+
+
+

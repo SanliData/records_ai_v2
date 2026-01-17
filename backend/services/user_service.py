@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime
 
 from backend.models.user import User
+from backend.services.admin_service import admin_service
 
 
 class UserService:
@@ -20,17 +21,22 @@ class UserService:
         # Exists
         if email in self._email_to_id:
             user_id = self._email_to_id[email]
-            return self._users[user_id]
+            user = self._users[user_id]
+            # Update admin status in case it changed
+            user.is_admin = admin_service.is_admin(email)
+            return user
 
-        # New user
+        # New user - check admin status
         user_id = str(uuid.uuid4())
+        is_admin = admin_service.is_admin(email)
 
         user = User(
             user_id=user_id,
             email=email,
             created_at=datetime.utcnow().isoformat(),
             profile={},
-            token=f"MAGIC-{user_id}"
+            token=f"MAGIC-{user_id}",
+            is_admin=is_admin
         )
 
         self._users[user_id] = user

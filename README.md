@@ -52,3 +52,43 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Access the application:
+- **Home**: http://127.0.0.1:8000/ui/index.html
+- **Upload**: http://127.0.0.1:8000/ui/upload.html
+- **API Docs**: http://127.0.0.1:8000/docs---
+
+## Frontend Pages
+
+### Anonymous Access (No Login Required)
+- **Home** (`/ui/index.html`) - Explore UPAP platform
+- **Upload & Analyze** (`/ui/upload.html`) - Upload and analyze records
+- **Results Preview** (`/ui/results.html`) - View analysis results
+
+### Authenticated Access (Login Required)
+- **Archive Save** (`/ui/archive-save.html`) - Save records to personal archive
+- **Library** (`/ui/library.html`) - View personal archive
+- **Login** (`/ui/login.html`) - Sign in / Sign up
+
+---
+
+## UPAP Pipeline Compliance
+
+All frontend pages use UPAP-compliant endpoints:
+
+- **Upload**: `/upap/process/process/preview` (Upload → Process, preview mode)
+- **Archive**: `/upap/archive/add` (Archive stage, requires auth)
+- **Publish**: `/upap/publish` (Publish stage, requires archive)
+
+See `UPAP_COMPATIBILITY_NOTES.md` for detailed UPAP compliance information.
+
+---
+
+## Production Deployment
+
+- **Domain**: https://zyagrolia.com
+- **API**: https://api.zyagrolia.com
+- **Platform**: Google Cloud Run
+
+See `DEPLOYMENT_STATUS.md` for deployment details and GitHub sync notes.
