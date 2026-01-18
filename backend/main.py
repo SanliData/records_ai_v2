@@ -1,6 +1,11 @@
-from fastapi import FastAPI
+﻿from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+from backend.core.logging_middleware import LoggingMiddleware
+from backend.core.error_handler import register_exception_handlers
 
 from backend.api.v1.upap_upload_router import router as upap_upload_router
 from backend.api.v1.upap_process_router import router as upap_process_router
@@ -20,7 +25,16 @@ from backend.db import init_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize database
+    # Startup: Validate secrets and initialize database
+    from backend.core.secrets import SecretLoader
+    try:
+        SecretLoader.validate_required_secrets()
+    except RuntimeError as e:
+        # Fail fast if required secrets are missing
+        import sys
+        print(f"FATAL: {e}", file=sys.stderr)
+        raise
+    
     init_db()
     yield
     # Shutdown: cleanup if needed
@@ -31,6 +45,12 @@ def create_app() -> FastAPI:
         version="2.0.0",
         lifespan=lifespan,
     )
+
+    # Register exception handlers (before routes)
+    register_exception_handlers(app)
+
+    # Add structured logging middleware
+    app.add_middleware(LoggingMiddleware)
 
     # Mount static files for frontend
     app.mount("/ui", StaticFiles(directory="frontend", html=True), name="ui")
@@ -49,14 +69,25 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(admin_router)
 
-    @app.get("/")
+    @app.get("/health")
     def health():
+        """Health check endpoint for monitoring."""
         return {
             "status": "ok",
             "service": "records_ai_v2",
             "mode": "UPAP-only",
             "version": "2.0.0",
         }
+
+    @app.get("/")
+    async def root():
+        """Root endpoint serves upload page."""
+        file_path = Path("frontend/upload.html")
+        return FileResponse(
+            file_path,
+            media_type="text/html",
+            headers={"Cache-Control": "no-store"}
+        )
 
     return app
 
