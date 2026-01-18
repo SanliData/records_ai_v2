@@ -10,3 +10,5 @@ jinja2
 requests
 opencv-python
 numpy
+rapidfuzz>=3.5.0
+tinydb

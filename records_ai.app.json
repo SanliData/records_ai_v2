@@ -1,0 +1,61 @@
+{
+  "name": "Records_AI",
+  "description": "AI-powered vinyl record upload, analysis, archiving, and publishing application",
+  "version": "1.0.0",
+  "developer": {
+    "name": "Records_AI",
+    "url": "https://zyagrolia.com"
+  },
+  "actions": [
+    {
+      "name": "upload_record",
+      "description": "Upload a vinyl record image with optional metadata",
+      "input_schema": {
+        "type": "object",
+        "required": ["image"],
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Vinyl record cover image"
+          },
+          "title": {
+            "type": "string",
+            "description": "Optional album title"
+          },
+          "artist": {
+            "type": "string",
+            "description": "Optional artist name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Optional contact email"
+          }
+        }
+      },
+      "endpoint": {
+        "method": "POST",
+        "url": "https://zyagrolia.com/app/upload"
+      }
+    },
+    {
+      "name": "get_record_status",
+      "description": "Check processing status of an uploaded record",
+      "input_schema": {
+        "type": "object",
+        "required": ["record_id"],
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "description": "Record identifier returned from upload"
+          }
+        }
+      },
+      "endpoint": {
+        "method": "GET",
+        "url": "https://zyagrolia.com/app/status/{record_id}"
+      }
+    }
+  ]
+}
