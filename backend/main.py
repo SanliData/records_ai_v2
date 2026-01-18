@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import logging
 
-from core.logging_middleware import LoggingMiddleware
 from core.error_handler import register_exception_handlers
 
 # Calculate repo root: backend/main.py -> backend/ -> repo root
@@ -59,9 +58,6 @@ def create_app() -> FastAPI:
 
     # Register exception handlers (before routes)
     register_exception_handlers(app)
-
-    # Add structured logging middleware
-    app.add_middleware(LoggingMiddleware)
 
     # Mount static files for frontend
     app.mount("/ui", StaticFiles(directory="frontend", html=True), name="ui")
