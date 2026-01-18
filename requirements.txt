@@ -12,5 +12,5 @@ opencv-python
 numpy
 rapidfuzz>=3.5.0
 tinydb
-google-cloud-error-reporting>=3.3.0
+google-cloud-error-reporting>=1.14.0
 slowapi>=0.1.9
