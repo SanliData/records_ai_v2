@@ -83,12 +83,7 @@ def create_app() -> FastAPI:
     @app.get("/health")
     def health():
         """Health check endpoint for monitoring."""
-        return {
-            "status": "ok",
-            "service": "records_ai_v2",
-            "mode": "UPAP-only",
-            "version": "2.0.0",
-        }
+        return {"status": "ok"}
 
     @app.get("/")
     async def root():
