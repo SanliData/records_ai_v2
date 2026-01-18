@@ -4,9 +4,16 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./records_ai_v2.db")
+# DATABASE_URL is REQUIRED - no SQLite fallback
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required. "
+        "Set Cloud SQL connection string in Cloud Run environment variables. "
+        "Example: postgresql://user:pass@host/dbname"
+    )
 
-# SQLite special kwargs
+# Connection args based on database type
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}

@@ -12,7 +12,7 @@ import logging
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 
-from core.error_reporting import error_reporter
+from backend.core.error_reporting import error_reporter
 
 logger = logging.getLogger(__name__)
 
