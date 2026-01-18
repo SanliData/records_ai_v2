@@ -386,13 +386,29 @@ function renderResults(result) {
     container.innerHTML = html;
 }
 
+// C-2: HTML escape helper
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function showError(message) {
+    // C-2: Fix XSS - use safe DOM creation for user message
     const container = document.getElementById('errorContainer');
-    container.innerHTML = `
-        <div class="error-message">
-            <strong>Error</strong><br>
-            ${message}
-        </div>
+    if (!container) return;
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.innerHTML = '<strong>Error</strong><br>';
+    const msgP = document.createElement('div');
+    msgP.textContent = message; // Safe - textContent escapes HTML
+    errorDiv.appendChild(msgP);
+    
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'card';
+    cardDiv.innerHTML = `
         <div class="card">
             <div class="actions">
                 <a href="index.html" class="btn btn-secondary">Back to Home</a>

@@ -52,6 +52,14 @@ button {
 <div class="container" id="list"></div>
 
 <script>
+// C-2: HTML escape helper
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 async function loadPending() {
     let r = await fetch('/admin/pending');
     let items = await r.json();
@@ -59,20 +67,67 @@ async function loadPending() {
 }
 
 function render(items) {
-    let el = document.getElementById('list');
+    const el = document.getElementById('list');
+    if (!el) return;
+    
     el.innerHTML = '';
 
     items.forEach(p => {
-        el.innerHTML += `
-            <div class="card">
-                <b>ID:</b> ${p.id || ""} <br>
-                <b>User:</b> ${p.user || ""} <br>
-                <b>Text:</b> ${p.text || ""} <br><br>
-
-                <button class="accept" onclick="approve('${p.id}')">Accept</button>
-                <button class="reject" onclick="reject('${p.id}')">Reject</button>
-            </div>
-        `;
+        // C-2: Escape user data to prevent XSS
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card';
+        
+        const idSpan = document.createElement('b');
+        idSpan.textContent = 'ID: ';
+        cardDiv.appendChild(idSpan);
+        cardDiv.appendChild(document.createTextNode(escapeHtml(String(p.id || ''))));
+        cardDiv.appendChild(document.createElement('br'));
+        
+        const userSpan = document.createElement('b');
+        userSpan.textContent = 'User: ';
+        cardDiv.appendChild(userSpan);
+        cardDiv.appendChild(document.createTextNode(escapeHtml(String(p.user || ''))));
+        cardDiv.appendChild(document.createElement('br'));
+        
+        const textSpan = document.createElement('b');
+        textSpan.textContent = 'Text: ';
+        cardDiv.appendChild(textSpan);
+        cardDiv.appendChild(document.createTextNode(escapeHtml(String(p.text || ''))));
+        cardDiv.appendChild(document.createElement('br'));
+        cardDiv.appendChild(document.createElement('br'));
+        
+        // H-1: Remove inline onclick - use event delegation
+        const approveBtn = document.createElement('button');
+        approveBtn.className = 'accept';
+        approveBtn.textContent = 'Accept';
+        approveBtn.dataset.action = 'approve';
+        approveBtn.dataset.id = String(p.id || '');
+        
+        const rejectBtn = document.createElement('button');
+        rejectBtn.className = 'reject';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.dataset.action = 'reject';
+        rejectBtn.dataset.id = String(p.id || '');
+        
+        cardDiv.appendChild(approveBtn);
+        cardDiv.appendChild(rejectBtn);
+        
+        el.appendChild(cardDiv);
+    });
+    
+    // H-1: Event delegation for buttons
+    el.addEventListener('click', function(e) {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        
+        if (action === 'approve') {
+            approve(id);
+        } else if (action === 'reject') {
+            reject(id);
+        }
     });
 }
 

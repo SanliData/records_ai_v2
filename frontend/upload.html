@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>Novitsky Archive – Upload Record</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<<<<<<< HEAD
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -12,13 +11,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-=======
-
->>>>>>> b053d0b34a1e87dd97db87a2270db1725770e23a
     <style>
         * {
             margin: 0;
-<<<<<<< HEAD
             padding: 0;
             box-sizing: border-box;
         }
@@ -505,68 +500,6 @@
             .drop-zone-hint {
                 font-size: 12px;
             }
-=======
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f4f4;
-        }
-
-        header {
-            background: #000;
-            color: #fff;
-            padding: 16px 24px;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .container {
-            max-width: 640px;
-            margin: 40px auto;
-            background: #fff;
-            padding: 32px;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            margin-top: 0;
-        }
-
-        label {
-            display: block;
-            margin-top: 16px;
-            font-weight: bold;
-        }
-
-        input[type="email"],
-        input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            margin-top: 6px;
-        }
-
-        button {
-            margin-top: 24px;
-            padding: 12px 20px;
-            background: #000;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            font-size: 15px;
-        }
-
-        button:disabled {
-            background: #999;
-            cursor: not-allowed;
-        }
-
-        pre {
-            margin-top: 24px;
-            background: #111;
-            color: #0f0;
-            padding: 12px;
-            font-size: 13px;
-            overflow-x: auto;
->>>>>>> b053d0b34a1e87dd97db87a2270db1725770e23a
         }
     </style>
 </head>
@@ -584,7 +517,6 @@
 </header>
 
 <div class="container">
-<<<<<<< HEAD
     <div class="upload-card">
         <div class="card-header">
             <h1>Upload Record</h1>
@@ -673,19 +605,54 @@ document.addEventListener('click', function(event) {
 let currentRecordId = null;
 let currentResult = null;
 
+// Safe storage helpers (C-3, H-3)
+function getStorage(key) {
+    try {
+        return localStorage.getItem(key) || sessionStorage.getItem(key);
+    } catch (e) {
+        return null;
+    }
+}
+
+function setStorage(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        try {
+            sessionStorage.setItem(key, value);
+            return true;
+        } catch (e2) {
+            return false;
+        }
+    }
+}
+
+// HTML escape helper (C-2)
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Check authentication on page load
 window.addEventListener('DOMContentLoaded', function() {
-    const authToken = localStorage.getItem('auth_token');
-    const userEmail = localStorage.getItem('user_email');
+    const authToken = getStorage('auth_token');
+    const userEmail = getStorage('user_email');
     
     if (!authToken || !userEmail) {
         window.location.href = 'login.html?return=' + encodeURIComponent('upload.html');
         return;
     }
     
-    // Display user email
-    document.getElementById('userEmail').textContent = userEmail;
-    document.getElementById('userInfo').style.display = 'block';
+    // Display user email (C-3: null check)
+    const userEmailEl = document.getElementById('userEmail');
+    const userInfoEl = document.getElementById('userInfo');
+    if (userEmailEl && userInfoEl) {
+        userEmailEl.textContent = userEmail;
+        userInfoEl.style.display = 'block';
+    }
     
     // Setup drag & drop
     setupDragAndDrop();
@@ -789,9 +756,13 @@ function showError(message) {
 
 function showSuccess(message) {
     const successBox = document.getElementById('successBox');
-    successBox.innerHTML = message;
+    const errorBox = document.getElementById('errorBox');
+    if (!successBox || !errorBox) return;
+    
+    // C-2: Use textContent for safety (message may contain HTML from API, but we display as text)
+    successBox.textContent = message;
     successBox.classList.add('active');
-    document.getElementById('errorBox').classList.remove('active');
+    errorBox.classList.remove('active');
 }
 
 async function uploadRecord() {
@@ -806,53 +777,17 @@ async function uploadRecord() {
     errorBox.classList.remove('active');
     successBox.classList.remove('active');
     resultBox.classList.remove('active');
-=======
-    <h2>Upload a Record Image (Live UPAP)</h2>
-
-    <p>
-        Select a JPEG or PNG image of a vinyl label or cover.
-        The file will be sent to the live <strong>Records_AI_V2</strong> service
-        and processed via <strong>UPAP (upload → process → archive → publish)</strong>.
-    </p>
-
-    <form id="uploadForm">
-        <label>Email (optional)</label>
-        <input type="email" id="email" placeholder="you@example.com" />
-
-        <label>Record Image</label>
-        <input type="file" id="file" accept="image/png,image/jpeg" required />
-
-        <button type="submit" id="submitBtn">Upload & Publish</button>
-    </form>
-
-    <pre id="output"></pre>
-</div>
-
-<script>
-const API_BASE =
-  "https://records-ai-v2-969278596906.us-central1.run.app";
->>>>>>> b053d0b34a1e87dd97db87a2270db1725770e23a
-
-const form = document.getElementById("uploadForm");
-const output = document.getElementById("output");
-const btn = document.getElementById("submitBtn");
-
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    output.textContent = "";
-    btn.disabled = true;
-
-    const fileInput = document.getElementById("file");
-    if (!fileInput.files.length) {
-<<<<<<< HEAD
-        showError('Please select a file first.');
-        return;
-    }
 
     const file = fileInput.files[0];
-    const authToken = localStorage.getItem('auth_token');
-    const userEmail = localStorage.getItem('user_email');
+    
+    // C-3: Null check for file
+    if (!file) {
+        showError('Please select a file first');
+        return;
+    }
+    
+    const authToken = getStorage('auth_token');
+    const userEmail = getStorage('user_email');
     
     if (!authToken || !userEmail) {
         alert('Please sign in first');
@@ -861,7 +796,7 @@ form.addEventListener("submit", async (e) => {
     }
 
     // Validate file type
-    if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+    if (!file.type || !file.type.match(/^image\/(jpeg|jpg|png)$/)) {
         showError('Please select a JPEG or PNG image file.');
         return;
     }
@@ -872,28 +807,17 @@ form.addEventListener("submit", async (e) => {
     updateStepper('upload', 'completed');
     updateStepper('process', 'active');
 
-=======
-        output.textContent = "❌ No file selected.";
-        btn.disabled = false;
-        return;
-    }
-
->>>>>>> b053d0b34a1e87dd97db87a2270db1725770e23a
     const formData = new FormData();
-    formData.append("file", fileInput.files[0]);
-
-    const email = document.getElementById("email").value;
-    if (email) {
-        formData.append("email", email);
-    }
+    formData.append("file", file);
+    formData.append("email", userEmail);
 
     try {
-<<<<<<< HEAD
-        const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        // H-2: Standardized API base
+        const apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? 'http://127.0.0.1:8000'
-            : 'https://api.zyagrolia.com';
+            : window.location.origin;
 
-        const response = await fetch(`${apiBase}/upap/process/process/preview`, {
+        const response = await fetch(`${apiBase}/api/v1/upap/upload`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${authToken}`
@@ -925,7 +849,7 @@ form.addEventListener("submit", async (e) => {
             records: results
         };
         
-        localStorage.setItem('preview_data', JSON.stringify(previewData));
+        setStorage('preview_data', JSON.stringify(previewData));
 
         // Redirect to preview page for quick review
         window.location.href = 'preview.html';
@@ -936,25 +860,8 @@ form.addEventListener("submit", async (e) => {
     } finally {
         uploadBtn.disabled = false;
         loading.classList.remove('active');
-=======
-        const res = await fetch(
-            API_BASE + "/api/v1/upap/upload",
-            {
-                method: "POST",
-                body: formData
-            }
-        );
-
-        const text = await res.text();
-        output.textContent = text;
-
-    } catch (err) {
-        output.textContent = "❌ ERROR:\n" + err.toString();
-    } finally {
-        btn.disabled = false;
->>>>>>> b053d0b34a1e87dd97db87a2270db1725770e23a
     }
-});
+}
 </script>
 
 </body>

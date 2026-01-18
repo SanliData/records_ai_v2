@@ -229,30 +229,69 @@ document.addEventListener('click', function(event) {
     }
 });
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+// H-2: Standardized API base
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://127.0.0.1:8000'
-    : 'https://api.zyagrolia.com';
+    : window.location.origin;
+
+// H-3: Safe storage helpers
+function getStorage(key) {
+    try {
+        return localStorage.getItem(key) || sessionStorage.getItem(key);
+    } catch (e) {
+        return null;
+    }
+}
+
+function setStorage(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        try {
+            sessionStorage.setItem(key, value);
+            return true;
+        } catch (e2) {
+            return false;
+        }
+    }
+}
 
 window.onload = function() {
+    // C-3: Null check for Google Sign-In button
+    const signinButton = document.getElementById("google-signin-button");
+    if (!signinButton) {
+        console.error('Google sign-in button element not found');
+        return;
+    }
+    
+    if (typeof google === 'undefined' || !google.accounts) {
+        const msgEl = document.getElementById("msg");
+        if (msgEl) {
+            msgEl.textContent = 'Failed to load Google Sign-In. Please refresh the page.';
+        }
+        return;
+    }
+    
     google.accounts.id.initialize({
         client_id: '969278596906-afqorvadshqquuhts4rpk0620dgg1fa4.apps.googleusercontent.com',
         callback: handleCredentialResponse
     });
 
-    google.accounts.id.renderButton(
-        document.getElementById("google-signin-button"),
-        {
-            theme: "outline",
-            size: "large",
-            width: "100%",
-            text: "signin_with",
-            locale: "en"
-        }
-    );
+    google.accounts.id.renderButton(signinButton, {
+        theme: "outline",
+        size: "large",
+        width: "100%",
+        text: "signin_with",
+        locale: "en"
+    });
 };
 
 async function handleCredentialResponse(response) {
+    // C-3: Null check
     const msg = document.getElementById("msg");
+    if (!msg) return;
+    
     msg.textContent = "Signing in...";
     msg.classList.remove("success-msg");
 
@@ -275,9 +314,9 @@ async function handleCredentialResponse(response) {
 
         const data = await res.json();
 
-        // Store auth token and email
-        localStorage.setItem("auth_token", data.token);
-        localStorage.setItem("user_email", data.email);
+        // Store auth token and email (H-3: using safe storage)
+        setStorage("auth_token", data.token);
+        setStorage("user_email", data.email);
 
         msg.textContent = "Success! Redirecting...";
         msg.classList.add("success-msg");

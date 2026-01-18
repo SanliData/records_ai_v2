@@ -654,17 +654,49 @@ document.addEventListener('click', function(event) {
     }
 });
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+// H-2: Standardized API base
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://127.0.0.1:8000'
-    : 'https://api.zyagrolia.com';
+    : window.location.origin;
+
+// H-3: Safe storage helpers
+function getStorage(key) {
+    try {
+        return localStorage.getItem(key) || sessionStorage.getItem(key);
+    } catch (e) {
+        return null;
+    }
+}
+
+function setStorage(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        try {
+            sessionStorage.setItem(key, value);
+            return true;
+        } catch (e2) {
+            return false;
+        }
+    }
+}
+
+// C-2: HTML escape helper
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 let allRecords = [];
 let currentUser = null;
 
 // Check authentication
 window.addEventListener('DOMContentLoaded', function() {
-    const token = localStorage.getItem('auth_token');
-    const email = localStorage.getItem('user_email');
+    const token = getStorage('auth_token');
+    const email = getStorage('user_email');
     
     if (!token || !email) {
         window.location.href = 'login.html?return=' + encodeURIComponent('library.html');
@@ -711,13 +743,18 @@ async function loadLibrary() {
         renderRecords(allRecords);
     } catch (error) {
         console.error('Error loading library:', error);
-        document.getElementById('recordsContainer').innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">⚠️</div>
-                <h2>Error Loading Archive</h2>
-                <p>${error.message}</p>
-            </div>
-        `;
+        // C-2: Fix XSS - use safe DOM creation instead of innerHTML with error.message
+        const container = document.getElementById('recordsContainer');
+        if (container) {
+            container.innerHTML = '';
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-state';
+            emptyDiv.innerHTML = '<div class="empty-state-icon">⚠️</div><h2>Error Loading Archive</h2>';
+            const p = document.createElement('p');
+            p.textContent = error.message; // Safe - textContent escapes HTML
+            emptyDiv.appendChild(p);
+            container.appendChild(emptyDiv);
+        }
     }
 }
 
@@ -1177,7 +1214,12 @@ async function fetchMarketPrices() {
         }
         
     } catch (error) {
-        priceInfo.innerHTML = `<div style="color: #EF4444;">Error: ${error.message}</div>`;
+        // C-2: Fix XSS - escape error.message
+        const errorDiv = document.createElement('div');
+        errorDiv.style.color = '#EF4444';
+        errorDiv.textContent = 'Error: ' + error.message; // Safe - textContent escapes
+        priceInfo.innerHTML = '';
+        priceInfo.appendChild(errorDiv);
     } finally {
         btn.disabled = false;
     }

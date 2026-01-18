@@ -302,8 +302,8 @@ function getUrlParameter(name) {
 }
 
 function checkAuth() {
-    const token = localStorage.getItem('auth_token');
-    const email = localStorage.getItem('user_email');
+    const token = getStorage('auth_token');
+    const email = getStorage('user_email');
     
     if (!token || !email) {
         document.getElementById('authRequired').style.display = 'block';
@@ -328,8 +328,8 @@ function loadRecordPreview() {
 
     document.getElementById('previewRecordId').textContent = currentRecordId;
 
-    // Try to load record data from sessionStorage
-    const storedResult = sessionStorage.getItem(`result_${currentRecordId}`);
+    // Try to load record data from sessionStorage (H-3: using safe storage)
+    const storedResult = getStorage(`result_${currentRecordId}`);
     if (storedResult) {
         try {
             currentRecordData = JSON.parse(storedResult);
@@ -415,9 +415,10 @@ async function saveToArchive() {
     loading.classList.add('active');
 
     try {
-        const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        // H-2: Standardized API base
+        const apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? 'http://127.0.0.1:8000'
-            : 'https://api.zyagrolia.com';
+            : window.location.origin;
 
         const formData = new FormData();
         formData.append('record_id', currentRecordId);
@@ -447,8 +448,13 @@ async function saveToArchive() {
         `;
         successBox.classList.add('active');
 
-        // Clear stored result since it's now archived
-        sessionStorage.removeItem(`result_${currentRecordId}`);
+        // Clear stored result since it's now archived (H-3: using safe storage)
+        try {
+            sessionStorage.removeItem(`result_${currentRecordId}`);
+            localStorage.removeItem(`result_${currentRecordId}`);
+        } catch (e) {
+            // Ignore storage errors
+        }
 
     } catch (err) {
         errorBox.textContent = `Failed to save to archive: ${err.message}`;
