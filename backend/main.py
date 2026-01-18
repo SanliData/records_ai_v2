@@ -3,9 +3,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from pathlib import Path
+import logging
 
 from backend.core.logging_middleware import LoggingMiddleware
 from backend.core.error_handler import register_exception_handlers
+
+# Calculate repo root: backend/main.py -> backend/ -> repo root
+REPO_ROOT = Path(__file__).resolve().parent.parent
+UPLOAD_HTML = REPO_ROOT / "frontend" / "upload.html"
+
+logger = logging.getLogger(__name__)
 
 from backend.api.v1.upap_upload_router import router as upap_upload_router
 from backend.api.v1.upap_process_router import router as upap_process_router
@@ -36,6 +43,10 @@ async def lifespan(app: FastAPI):
         raise
     
     init_db()
+    
+    # Log upload HTML path for verification
+    logger.info("UPLOAD_HTML path=%s exists=%s", str(UPLOAD_HTML), UPLOAD_HTML.exists())
+    
     yield
     # Shutdown: cleanup if needed
 
@@ -82,9 +93,8 @@ def create_app() -> FastAPI:
     @app.get("/")
     async def root():
         """Root endpoint serves upload page."""
-        file_path = Path("frontend/upload.html")
         return FileResponse(
-            file_path,
+            UPLOAD_HTML,
             media_type="text/html",
             headers={"Cache-Control": "no-store"}
         )
