@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import logging
 
-from backend.core.logging_middleware import LoggingMiddleware
-from backend.core.error_handler import register_exception_handlers
+from core.logging_middleware import LoggingMiddleware
+from core.error_handler import register_exception_handlers
 
 # Calculate repo root: backend/main.py -> backend/ -> repo root
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -33,7 +33,7 @@ from backend.db import init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Validate secrets and initialize database
-    from backend.core.secrets import SecretLoader
+    from core.secrets import SecretLoader
     try:
         SecretLoader.validate_required_secrets()
     except RuntimeError as e:
