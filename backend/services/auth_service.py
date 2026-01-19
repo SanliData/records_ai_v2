@@ -7,7 +7,7 @@
 # UTF-8 â€” English only
 
 from tinydb import where
-from backend.storage.database import db
+from backend.db import db
 import requests
 
 

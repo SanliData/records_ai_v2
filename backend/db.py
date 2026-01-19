@@ -1,6 +1,7 @@
 #backend/db.py
 # UTF-8
 import os
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -41,3 +42,19 @@ def init_db():
     """
     from backend import models  # noqa: F401  (ensures models are imported)
     Base.metadata.create_all(bind=engine)
+
+
+# TinyDB instance for legacy services
+# Used by auth_service, dashboard_service, admin_stats_router
+from tinydb import TinyDB
+
+# Ensure storage directory exists
+REPO_ROOT = Path(__file__).resolve().parent.parent
+STORAGE_DIR = REPO_ROOT / "backend" / "storage"
+STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+# TinyDB JSON file path
+TINYDB_PATH = STORAGE_DIR / "records.json"
+
+# Global TinyDB instance
+db = TinyDB(str(TINYDB_PATH))

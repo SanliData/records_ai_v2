@@ -7,7 +7,7 @@ from typing import Any, Dict
 from fastapi import APIRouter
 from tinydb import where
 
-from backend.storage.database import db
+from backend.db import db
 
 router = APIRouter(
     prefix="/admin/stats",

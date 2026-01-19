@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from tinydb import Query
 
-from backend.storage.database import db
+from backend.db import db
 
 
 class DashboardService:
