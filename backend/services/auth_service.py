@@ -89,9 +89,25 @@ class AuthService:
         return user
 
     def get_user_by_id(self, user_id: str) -> Optional[User]:
+        """
+        Get user by ID. Handles UUID string conversion.
+        
+        Args:
+            user_id: User ID as string (UUID format)
+            
+        Returns:
+            User object or None if not found
+        """
         try:
-            return self.db.query(User).filter(User.id == user_id).first()
-        except Exception:
+            from uuid import UUID
+            # Convert string to UUID if needed
+            user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+            return self.db.query(User).filter(User.id == user_uuid).first()
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid user_id format: {user_id}, error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching user by id: {e}", exc_info=True)
             return None
 
     def get_user_by_email(self, email: str) -> Optional[User]:

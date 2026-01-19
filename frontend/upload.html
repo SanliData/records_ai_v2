@@ -854,8 +854,16 @@ async function uploadRecord() {
         window.location.href = 'preview.html';
 
     } catch (err) {
-        showError(`Upload failed: ${err.message}`);
+        const errorMessage = err.message || 'Upload failed';
+        showError(`Upload failed: ${errorMessage}`);
         console.error(err);
+        
+        // If 401 error, redirect to login
+        if (errorMessage.includes('401') || errorMessage.includes('User not found') || errorMessage.includes('Authentication required')) {
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        }
     } finally {
         uploadBtn.disabled = false;
         loading.classList.remove('active');

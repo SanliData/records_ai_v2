@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from fastapi import Header, HTTPException, Depends
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -7,6 +8,8 @@ from sqlalchemy.orm import Session
 from backend.db import get_db
 from backend.services.auth_service import get_auth_service
 from backend.models.user import User
+
+logger = logging.getLogger(__name__)
 
 
 def get_current_user(
@@ -31,8 +34,12 @@ def get_current_user(
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload. Please sign in again.")
     
+    # Log for debugging (only in debug mode to avoid log spam)
+    logger.debug(f"Looking up user with id: {user_id} (type: {type(user_id)})")
+    
     user = auth_service.get_user_by_id(str(user_id))
     if not user:
+        logger.warning(f"User not found in database for user_id: {user_id}. Token may be from different environment or user was deleted.")
         raise HTTPException(status_code=401, detail="User not found. Please sign in again.")
     
     if not user.is_active:
