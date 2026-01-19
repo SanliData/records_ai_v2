@@ -1,11 +1,15 @@
 # backend/services/upap/user/user_auth_stage.py
 # UTF-8, English only
 
-from backend.services.user_service import user_service
+from sqlalchemy.orm import Session
+from backend.services.user_service import get_user_service
 
 
 class UserAuthStage:
     """UPAP stage: validate user by email."""
+
+    def __init__(self, db: Session):
+        self.db = db
 
     def run(self, payload: dict):
         if "email" not in payload:
@@ -13,10 +17,10 @@ class UserAuthStage:
 
         email = payload["email"]
 
-        # Fetch or auto-create user
+        user_service = get_user_service(self.db)
         user = user_service.get_or_create_user(email)
 
         return {
-            "user_id": user.id,
+            "user_id": str(user.id),
             "email": user.email
         }

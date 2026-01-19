@@ -14,11 +14,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from backend.db import Base
+from backend import models
+
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -39,6 +44,15 @@ def run_migrations_offline() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
+    if not url or url == "driver://user:pass@localhost/dbname":
+        import os
+        from pathlib import Path
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            REPO_ROOT = Path(__file__).resolve().parents[1]
+            SQLITE_PATH = REPO_ROOT / "records_ai_v2.db"
+            database_url = f"sqlite:///{SQLITE_PATH}"
+        url = database_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -57,6 +71,15 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        from pathlib import Path
+        REPO_ROOT = Path(__file__).resolve().parents[1]
+        SQLITE_PATH = REPO_ROOT / "records_ai_v2.db"
+        database_url = f"sqlite:///{SQLITE_PATH}"
+    
+    config.set_main_option("sqlalchemy.url", database_url)
+    
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

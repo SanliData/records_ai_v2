@@ -1,0 +1,20 @@
+# ADIM 2: Sadece backend/main.py'yi ekle
+git add backend/main.py
+
+# ADIM 3: Commit yap
+git commit -m "fix: wrap risky imports in try/except to prevent startup crashes
+
+Production emergency fix:
+- Wrap slowapi imports (rate limiting optional)
+- Wrap error_handler import (exception handlers optional)
+- Wrap db import (database init optional if DATABASE_URL missing)
+- Wrap all router imports (individual routers optional)
+- Add local run support for testing
+
+App now boots even if optional features fail.
+All failures are logged but do not prevent startup.
+
+Fixes Cloud Run startup crash (revision 00060-92w)."
+
+# ADIM 4: Push et
+git push origin main

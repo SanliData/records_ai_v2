@@ -1,11 +1,15 @@
 ﻿# backend/api/v1/upap_process_router.py
 # -*- coding: utf-8 -*-
+#
+# ⚠️ INTERNAL / DIAGNOSTIC ENDPOINT
+# This endpoint is a placeholder for process stage testing.
+# NOT for production use - process stage is integrated into preview flow.
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
-router = APIRouter( tags=["upap"])
+router = APIRouter(prefix="/upap", tags=["UPAP Internal"])
 
 class ProcessRequest(BaseModel):
     record_id: str
@@ -13,11 +17,16 @@ class ProcessRequest(BaseModel):
 @router.post("/process")
 async def process_record(payload: ProcessRequest):
     """
-    UPAP PROCESS STAGE (v1)
+    ⚠️ INTERNAL / DIAGNOSTIC ENDPOINT
+    
+    UPAP PROCESS STAGE (v1) - Placeholder endpoint.
     - No AI
     - No OCR
     - No external lookup
     - Contract only
+    
+    NOTE: Process stage is integrated into /upap/process/preview flow.
+    This endpoint exists for diagnostic/testing purposes only.
     """
 
     return {

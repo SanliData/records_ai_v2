@@ -11,6 +11,9 @@ requests
 opencv-python
 numpy
 rapidfuzz>=3.5.0
-tinydb
 google-cloud-error-reporting>=1.14.0
 slowapi>=0.1.9
+passlib[bcrypt]
+python-jose[cryptography]
+psycopg2-binary
+alembic

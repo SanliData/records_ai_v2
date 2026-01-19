@@ -1,9 +1,15 @@
 from fastapi import APIRouter
+import os
 
 router = APIRouter()
 
-# VERY SIMPLE SERVICE TOKEN (MVP)
-SERVICE_TOKEN = "recordsai-chatgpt-app-token"
+# Service token for ChatGPT App integration (from environment)
+SERVICE_TOKEN = os.getenv("SERVICE_TOKEN")
+if not SERVICE_TOKEN:
+    raise RuntimeError(
+        "SERVICE_TOKEN environment variable is required for ChatGPT App integration. "
+        "Set it in Cloud Run environment variables or Secret Manager."
+    )
 
 
 @router.post("/token")

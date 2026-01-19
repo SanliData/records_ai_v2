@@ -6,7 +6,9 @@ from typing import Optional
 from datetime import datetime
 import json
 import uuid
-from backend.services.user_service import user_service
+from sqlalchemy.orm import Session
+from backend.db import get_db
+from backend.services.user_service import get_user_service
 from backend.services.user_library_service import user_library_service
 from backend.services.global_library_service import global_library_service
 from backend.services.upap.engine.upap_engine import upap_engine

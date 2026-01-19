@@ -1,0 +1,22 @@
+# GitHub Push - 403 Error Fix
+# Problem: Token permission denied
+# Solution: Use credential helper or update remote URL
+
+# YÖNTEM 1: Remote URL'i token ile güncelle (ÖNERİLEN)
+git remote set-url origin https://YOUR_GITHUB_TOKEN@github.com/SanliData/records_ai_v2.git
+git push origin main
+
+# YÖNTEM 2: Credential helper kullan
+git config --global credential.helper wincred
+git push origin main
+# (Token'ı credential manager'a kaydedecek)
+
+# YÖNTEM 3: Environment variable ile
+$env:GIT_ASKPASS = "echo"
+$env:GIT_USERNAME = "SanliData"
+$env:GIT_PASSWORD = "YOUR_GITHUB_TOKEN"
+git push origin main
+
+# YÖNTEM 4: Token'ı kontrol et
+# GitHub -> Settings -> Developer settings -> Personal access tokens
+# Token'ın "repo" scope'una sahip olduğundan emin ol

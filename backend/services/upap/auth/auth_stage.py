@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-AuthStage – resolves user identity from email.
-
-For now this is a simple in-memory example:
-in a real system this would query a User service or database.
-"""
 
 from typing import Any, Dict
-import uuid
+from sqlalchemy.orm import Session
 
 from backend.services.upap.engine.stage_interface import StageInterface
+from backend.services.user_service import get_user_service
 
 
 class AuthStage(StageInterface):
@@ -19,15 +14,17 @@ class AuthStage(StageInterface):
         email = payload.get("email")
         if not email or not isinstance(email, str):
             raise ValueError("AuthStage.run() requires 'email' in context")
+        if "db" not in payload:
+            raise ValueError("AuthStage.run() requires 'db' (Session) in context")
 
     def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
         email = context["email"]
+        db: Session = context["db"]
 
-        # In a real system: lookup or create user.
-        # Here we just generate a deterministic user_id for testing.
-        user_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"upap-user:{email}"))
+        user_service = get_user_service(db)
+        user = user_service.get_or_create_user(email)
 
         return {
-            "user_id": user_id,
-            "email": email,
+            "user_id": str(user.id),
+            "email": user.email,
         }

@@ -1,30 +1,15 @@
 #!/bin/bash
-# Check Cloud Build Log
+# Cloud Shell'de çalıştır - Son build log'larını kontrol et
 
-BUILD_ID="9b0bd0c2-b6a5-47d4-93cc-d7998b971249"
-PROJECT_ID="records-ai"
-REGION="europe-west1"
+echo "📋 Son build'in ID'sini al..."
+BUILD_ID=$(gcloud builds list --limit=1 --format="value(id)" --project records-ai --region us-central1)
 
-echo "========================================"
-echo "Cloud Build Log Viewer"
-echo "========================================"
-echo ""
-echo "Build ID: $BUILD_ID"
-echo "Project: $PROJECT_ID"
-echo "Region: $REGION"
-echo ""
-
-# Get build log
-echo "Fetching build log..."
-echo ""
-
-gcloud builds log $BUILD_ID --project=$PROJECT_ID --region=$REGION
-
-echo ""
-echo "========================================"
-echo "Build log retrieved"
-echo "========================================"
-echo ""
-echo "To view in Console:"
-echo "https://console.cloud.google.com/cloud-build/builds/$BUILD_ID?project=$PROJECT_ID&region=$REGION"
-echo ""
+if [ -z "$BUILD_ID" ]; then
+    echo "❌ Build bulunamadı. Manuel kontrol:"
+    echo "https://console.cloud.google.com/cloud-build/builds?project=969278596906"
+else
+    echo "✅ Build ID: $BUILD_ID"
+    echo ""
+    echo "📋 Son 100 satır log:"
+    gcloud builds log "$BUILD_ID" --project records-ai | tail -100
+fi

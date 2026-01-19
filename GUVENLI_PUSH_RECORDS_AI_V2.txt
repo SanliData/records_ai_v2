@@ -1,0 +1,52 @@
+# Güvenli Push - records_ai_v2 Repository
+# PowerShell'de bu komutları sırayla çalıştırın
+
+# 1. Dizine git
+cd C:\Users\issan\records_ai_v2
+
+# 2. Git kullanıcı bilgilerini ayarla (eğer ayarlanmadıysa)
+git config --global user.name "Isanli"
+git config --global user.email "isanli058@gmail.com"
+
+# 3. Remote'u records_ai_v2'ye değiştir
+git remote remove origin
+git remote add origin https://github.com/SanliData/records_ai_v2.git
+
+# 4. Remote kontrol
+git remote -v
+
+# 5. Git durumunu kontrol et
+git status
+
+# 6. Sadece GÜVENLİ kod dosyalarını ekle (.gitignore güvenli olmayanları koruyacak)
+git add backend/
+git add frontend/
+git add scripts/
+git add requirements.txt
+git add dockerfile
+git add README.md
+git add .gitignore
+git add alembic/
+git add tests/
+git add docs/
+git add Procfile
+git add alembic.ini
+git add main.py
+
+# 7. ÖNEMLİ: Stage'deki dosyaları kontrol et
+# Aşağıdaki dosyalar görünmemeli:
+# - sa-key.json
+# - records-ai-runtime-key.json
+# - *.db (records.db, records_ai.db, vb.)
+# - .env
+git status
+
+# 8. Commit oluştur
+git commit -m "feat: Production deployment - us-central1 region, OAuth Client ID fix, merge conflicts resolved"
+
+# 9. GitHub'a push et (boş repo - ilk push)
+git push -u origin main
+
+# Eğer hata alırsanız (authentication):
+# GitHub'da Personal Access Token oluşturun: https://github.com/settings/tokens
+# Token ile push: git push https://YOUR_TOKEN@github.com/SanliData/records_ai_v2.git main

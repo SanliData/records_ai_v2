@@ -1,0 +1,36 @@
+# Güvenli Push Komutları
+# PowerShell'de bu komutları sırayla çalıştırın
+
+cd C:\Users\issan\records_ai_v2
+
+# Kullanıcı bilgileri
+git config --global user.name "Isanli"
+git config --global user.email "isanli058@gmail.com"
+
+# Remote kontrol/ayar
+git remote remove origin
+git remote add origin https://github.com/SanliData/records_ai.git
+git remote -v
+
+# Sadece güvenli dosyaları ekle
+git add backend/
+git add frontend/
+git add scripts/
+git add requirements.txt
+git add dockerfile
+git add README.md
+git add .gitignore
+git add alembic/
+git add tests/
+git add docs/
+git add Procfile
+git add alembic.ini
+
+# Kontrol et - güvenli olmayan dosyalar görünmemeli
+git status
+
+# Commit
+git commit -m "feat: Production deployment - us-central1 region, OAuth Client ID fix, merge conflicts resolved"
+
+# Push
+git push origin main

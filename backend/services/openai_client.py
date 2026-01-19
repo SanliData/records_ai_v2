@@ -17,9 +17,13 @@ from openai import OpenAI
 
 class OpenAIVisionClient:
     def __init__(self):
-        api_key = os.getenv("proj_kC4kttheJQf0J7LL80C9Q5n0")
+        # Standard environment variable name for OpenAI API key
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise RuntimeError("proj_kC4kttheJQf0J7LL80C9Q5n0")
+            raise RuntimeError(
+                "OPENAI_API_KEY environment variable is required. "
+                "Set it in Cloud Run environment variables or Secret Manager."
+            )
         self.client = OpenAI(api_key=api_key)
 
     def _encode_image(self, file_path: Path | str, raw_bytes: Optional[bytes]) -> str:

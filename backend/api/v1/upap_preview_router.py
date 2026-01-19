@@ -21,7 +21,9 @@ from backend.api.v1.auth_middleware import get_current_user
 
 router = APIRouter(prefix="/upap/process", tags=["UPAP Preview"])
 
-# Initialize UPAP stages
+# NOTE: Direct stage instantiation for preview flow (bypasses engine)
+# This is intentional - preview flow needs fine-grained control
+# Production archive flow uses engine.run_stage() methods
 upload_stage = UploadStage()
 process_stage = ProcessStage()
 
@@ -102,16 +104,18 @@ async def process_single_file(file_bytes: bytes, filename: str, user_email: str,
         # Single record processing (original logic)
         record_id = str(uuid.uuid4())
         
-        # 3. OCR STAGE (if enabled)
+        # 3. OCR STAGE (if enabled) - Use engine public method
         ocr_text = ""
-        if "ocr" in upap_engine.stages:
-            ocr_stage = upap_engine.stages["ocr"]
+        try:
             ocr_context = {
                 "file_path": saved_path,
                 "record_id": record_id
             }
-            ocr_result = ocr_stage.run(ocr_context)
+            ocr_result = upap_engine.run_stage("ocr", ocr_context)
             ocr_text = ocr_result.get("ocr_text", "")
+        except RuntimeError:
+            # OCR stage not registered (UPAP_ENABLE_OCR not set)
+            pass
         
         # 4. PROCESS STAGE - Normalize and match
         process_context = {
@@ -136,18 +140,19 @@ async def process_single_file(file_bytes: bytes, filename: str, user_email: str,
                 # Fallback if GPT analysis fails
                 gpt_analysis = {"error": str(e), "source": "error"}
         
-        # 5. AI STAGE (if enabled - fallback to UPAP AI stage)
+        # 5. AI STAGE (if enabled) - Use engine public method
         ai_metadata = {}
-        if "ai" in upap_engine.stages or "aianalysis" in upap_engine.stages:
-            ai_stage_name = "ai" if "ai" in upap_engine.stages else "aianalysis"
-            ai_stage = upap_engine.stages[ai_stage_name]
+        try:
             ai_context = {
                 "ocr_text": gpt_analysis.get("ocr_text") or ocr_text,
                 "record_id": record_id,
                 **process_result
             }
-            ai_result = ai_stage.run(ai_context)
+            ai_result = upap_engine.run_stage("ai", ai_context)
             ai_metadata = ai_result.get("ai_metadata", {})
+        except RuntimeError:
+            # AI stage not registered (UPAP_ENABLE_AI not set)
+            pass
         
         # Merge GPT analysis with AI metadata (GPT takes priority)
         final_metadata = {

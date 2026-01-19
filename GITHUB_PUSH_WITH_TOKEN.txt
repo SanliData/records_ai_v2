@@ -1,0 +1,26 @@
+# GitHub Push - Token Authentication
+# Repository: https://github.com/SanliData/records_ai_v2
+# Token: YOUR_GITHUB_TOKEN
+
+# PowerShell'de veya Git Bash'te çalıştırın:
+
+# 1. Dizine git
+cd C:\Users\issan\records_ai_v2
+
+# 2. Değişiklikleri kontrol et
+git status
+
+# 3. Tüm değişiklikleri ekle
+git add backend/main.py
+
+# 4. Commit oluştur
+git commit -m "fix: serve upload UI at root with correct Cloud Run path"
+
+# 5. Remote'u token ile güncelle (güvenli)
+git remote set-url origin https://YOUR_GITHUB_TOKEN@github.com/SanliData/records_ai_v2.git
+
+# 6. Push et
+git push origin main
+
+# Alternatif: Tek seferde push (token URL'de)
+# git push https://YOUR_GITHUB_TOKEN@github.com/SanliData/records_ai_v2.git main

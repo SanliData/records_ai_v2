@@ -1,0 +1,3 @@
+# Tek satırda push (Git Bash veya PowerShell)
+
+cd C:\Users\issan\records_ai_v2 && git add backend/main.py && git commit -m "fix: serve upload UI at root with correct Cloud Run path" && git push https://YOUR_GITHUB_TOKEN@github.com/SanliData/records_ai_v2.git main

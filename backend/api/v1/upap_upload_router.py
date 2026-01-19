@@ -2,9 +2,13 @@
 from datetime import datetime
 import uuid
 import re
+from pathlib import Path
+import tempfile
+import os
 
 from backend.api.v1.auth_middleware import get_current_user
 from backend.models.user import User
+from backend.services.novarchive_gpt_service import novarchive_gpt_service
 
 router = APIRouter(prefix="/api/v1/upap", tags=["UPAP"])
 
@@ -15,7 +19,7 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
 
 # Allowed MIME types for audio files
-ALLOWED_MIME_TYPES = {
+ALLOWED_AUDIO_TYPES = {
     'audio/mpeg',
     'audio/mp3',
     'audio/wav',
@@ -27,6 +31,18 @@ ALLOWED_MIME_TYPES = {
     'audio/x-aiff',
 }
 
+# Allowed MIME types for image files
+ALLOWED_IMAGE_TYPES = {
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+}
+
+# Combined allowed types
+ALLOWED_MIME_TYPES = ALLOWED_AUDIO_TYPES | ALLOWED_IMAGE_TYPES
+
 
 def validate_email(email: str) -> bool:
     """Validate email format."""
@@ -34,11 +50,13 @@ def validate_email(email: str) -> bool:
 
 
 def validate_mime_type(content_type: str) -> bool:
-    """Validate MIME type is audio."""
+    """Validate MIME type is audio or image."""
     if not content_type:
         return False
     # Check exact match and base type
-    return content_type in ALLOWED_MIME_TYPES or content_type.startswith('audio/')
+    return (content_type in ALLOWED_MIME_TYPES or 
+            content_type.startswith('audio/') or 
+            content_type.startswith('image/'))
 
 
 @router.post("/upload")
@@ -56,8 +74,12 @@ async def upload(
     - Authentication required (valid Bearer token)
     - Email must match authenticated user
     - File size limit: 50MB
-    - MIME type validation: audio only (mp3, wav, flac, aiff)
+    - MIME type validation: audio (mp3, wav, flac, aiff) or image (jpeg, png, webp, heic)
     - Rate limit: 5 uploads per minute per IP (enforced at app level)
+    
+    MODES:
+    - image/* → cover_recognition mode
+    - audio/* → audio_metadata mode
     """
     
     # Validate email matches authenticated user
@@ -74,11 +96,22 @@ async def upload(
             detail="Invalid email format"
         )
 
-    # Validate MIME type - audio only
+    # Validate MIME type - audio or image
     if not validate_mime_type(file.content_type):
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid file type. Only audio files allowed (mp3, wav, flac, aiff). Got: {file.content_type}"
+            detail=f"Invalid file type. Only audio (mp3, wav, flac, aiff) or image (jpeg, png, webp) files allowed. Got: {file.content_type}"
+        )
+    
+    # Determine processing mode based on content type
+    if file.content_type and file.content_type.startswith('image/'):
+        mode = "cover_recognition"
+    elif file.content_type and file.content_type.startswith('audio/'):
+        mode = "audio_metadata"
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unable to determine processing mode for content type: {file.content_type}"
         )
 
     record_id = str(uuid.uuid4())
@@ -95,7 +128,8 @@ async def upload(
     
     size_bytes = len(content)
 
-    return {
+    # Base response structure
+    response = {
         "status": "ok",
         "stage": "upload",
         "record_id": record_id,
@@ -103,4 +137,59 @@ async def upload(
         "email": email,
         "size_bytes": size_bytes,
         "timestamp": datetime.utcnow().isoformat(),
+        "mode": mode,
+        "content_type": file.content_type,
     }
+
+    # For image mode, perform recognition using novarchive_gpt_service
+    if mode == "cover_recognition":
+        try:
+            # Save file temporarily for recognition
+            temp_dir = Path("storage") / "temp" / str(current_user.id)
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            
+            temp_file = temp_dir / f"{record_id}_{file.filename or 'upload.jpg'}"
+            temp_file.write_bytes(content)
+            
+            # Perform recognition
+            recognition_result = novarchive_gpt_service.analyze_vinyl_record(
+                file_path=str(temp_file),
+                raw_bytes=content  # Also pass raw bytes for efficiency
+            )
+            
+            # Extract recognition data
+            response["record"] = {
+                "artist": recognition_result.get("artist"),
+                "album": recognition_result.get("album") or recognition_result.get("title"),
+                "label": recognition_result.get("label"),
+                "catalog_number": recognition_result.get("catalog_number"),
+                "year": recognition_result.get("year"),
+                "country": recognition_result.get("country"),
+                "format": recognition_result.get("format", "LP"),
+                "confidence": recognition_result.get("confidence", 0.5),
+            }
+            response["ocr_text"] = recognition_result.get("ocr_text", "")
+            response["recognition_source"] = recognition_result.get("source", "novarchive_gpt")
+            response["file_path"] = str(temp_file)  # Store path for later use
+            response["message"] = "Cover image received and analyzed."
+            
+            # Clean up temp file if needed (optional - can keep for preview)
+            # temp_file.unlink()
+            
+        except Exception as e:
+            # If recognition fails, return placeholder but don't break upload
+            response["record"] = {
+                "artist": None,
+                "album": None,
+                "label": None,
+                "catalog_number": None,
+                "confidence": None,
+            }
+            response["recognition_error"] = str(e)
+            response["message"] = "Cover image received. Recognition failed - will retry later."
+    elif mode == "audio_metadata":
+        # Audio mode keeps existing structure for backward compatibility
+        # Future: Add audio metadata extraction here
+        pass
+
+    return response

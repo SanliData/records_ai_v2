@@ -17,7 +17,7 @@ class AdminService:
         # Admin email list
         # In production, this would be stored in a database
         self._admin_emails = {
-            "ednovitsky@archive.com",
+            "ednovitsky@novitskyarchive.com",
             "isanli058@gmail.com"
         }
     

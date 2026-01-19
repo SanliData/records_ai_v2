@@ -1,0 +1,42 @@
+# GitHub'a Push - records_ai_v2 Repository
+# PowerShell'de bu komutları sırayla çalıştırın
+
+# 1. Dizine git
+cd C:\Users\issan\records_ai_v2
+
+# 2. Remote'u records_ai_v2'ye değiştir
+git remote remove origin
+git remote add origin https://github.com/SanliData/records_ai_v2.git
+
+# 3. Remote kontrol
+git remote -v
+
+# 4. Git durumunu kontrol et
+git status
+
+# 5. Tüm değişiklikleri ekle (sadece güvenli dosyalar - .gitignore koruyacak)
+git add backend/
+git add frontend/
+git add scripts/
+git add requirements.txt
+git add dockerfile
+git add README.md
+git add .gitignore
+git add alembic/
+git add tests/
+git add docs/
+git add Procfile
+git add alembic.ini
+git add main.py
+
+# 6. Kontrol et
+git status
+
+# 7. Commit
+git commit -m "feat: Production deployment - us-central1 region, OAuth Client ID fix, merge conflicts resolved"
+
+# 8. GitHub'a push et (boş repo olduğu için --force gerekebilir)
+git push -u origin main
+
+# Eğer hata alırsanız, force push deneyin (dikkatli kullanın):
+# git push -u origin main --force

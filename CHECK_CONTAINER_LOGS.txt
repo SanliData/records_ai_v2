@@ -1,0 +1,17 @@
+# Check Cloud Run Container Logs
+# Run this in Cloud Shell to see startup errors:
+
+gcloud run logs read records-ai-v2 \
+  --region us-central1 \
+  --limit 100 \
+  --project records-ai
+
+# Or check the build logs:
+# The deploy output shows build log URL:
+# https://console.cloud.google.com/cloud-build/builds;region=us-central1/53fcd72a-c248-474b-9542-8cb117464846?project=969278596906
+
+# Check revision logs:
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=records-ai-v2" \
+  --limit 50 \
+  --project records-ai \
+  --format json

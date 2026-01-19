@@ -4,14 +4,17 @@
 
 from __future__ import annotations
 
+import logging
+import uuid
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 from statistics import mean
 from typing import Any, Dict, List, Optional
+from sqlalchemy.orm import Session
 
-from tinydb import Query
+from backend.models.archive_record_db import ArchiveRecord
 
-from backend.db import db
+logger = logging.getLogger(__name__)
 
 
 class DashboardService:
@@ -20,31 +23,17 @@ class DashboardService:
 
     Computes per-user and global statistics for:
     - Archive records (final stored records)
-    - Pipeline activity over time
 
     This service is READ-ONLY:
     - It never mutates the database.
     - Safe to call from routers and admin tools.
     """
 
-    def __init__(self) -> None:
-        # Main tables (TinyDB)
-        self._archives = db.table("archives")
-        self._pending = db.table("pending_records")
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
+    def __init__(self, db: Session) -> None:
+        self.db = db
 
     @staticmethod
     def _parse_dt(value: Any) -> Optional[datetime]:
-        """
-        Best effort parsing of created_at / timestamp fields.
-        Supports:
-        - ISO8601 strings
-        - Already-datetime objects
-        Returns None if parsing fails.
-        """
         if isinstance(value, datetime):
             return value
         if isinstance(value, str):
@@ -55,10 +44,10 @@ class DashboardService:
         return None
 
     @staticmethod
-    def _safe_confidence(records: List[Dict[str, Any]]) -> Optional[float]:
+    def _safe_confidence(records: List[Any]) -> Optional[float]:
         vals: List[float] = []
         for r in records:
-            c = r.get("confidence")
+            c = r.confidence if hasattr(r, "confidence") else None
             if isinstance(c, (int, float)):
                 vals.append(float(c))
         if not vals:
@@ -73,26 +62,8 @@ class DashboardService:
             return lower.rsplit(".", 1)[-1]
         return "unknown"
 
-    # ------------------------------------------------------------------
-    # Public API – per-user
-    # ------------------------------------------------------------------
-
-    def get_user_summary(self, user_id: int) -> Dict[str, Any]:
-        """
-        High level summary for a given user_id.
-
-        Returns:
-            {
-              "user_id": int,
-              "total_archives": int,
-              "first_archive_at": str | null,
-              "last_archive_at": str | null,
-              "avg_confidence": float | null,
-              "by_file_type": { "jpg": 12, "png": 3, ... }
-            }
-        """
-        q = Query()
-        user_records: List[Dict[str, Any]] = self._archives.search(q.user_id == user_id)
+    def get_user_summary(self, user_id: str) -> Dict[str, Any]:
+        user_records = self.db.query(ArchiveRecord).filter(ArchiveRecord.user_id == user_id).all()
 
         if not user_records:
             return {
@@ -104,10 +75,9 @@ class DashboardService:
                 "by_file_type": {},
             }
 
-        # Dates
         dates: List[datetime] = []
         for r in user_records:
-            dt = self._parse_dt(r.get("created_at"))
+            dt = self._parse_dt(r.created_at if hasattr(r, "created_at") else None)
             if dt is not None:
                 dates.append(dt)
 
@@ -117,13 +87,11 @@ class DashboardService:
             first_at = min(dates).isoformat()
             last_at = max(dates).isoformat()
 
-        # Confidence
         avg_conf = self._safe_confidence(user_records)
 
-        # File type histogram
         file_counter: Counter[str] = Counter()
         for r in user_records:
-            fp = r.get("file_path") or ""
+            fp = getattr(r, "file_path", None) or ""
             file_counter[self._file_type_from_path(fp)] += 1
 
         return {
@@ -137,43 +105,36 @@ class DashboardService:
 
     def get_user_timeline(
         self,
-        user_id: int,
+        user_id: str,
         days: int = 30,
     ) -> Dict[str, Any]:
-        """
-        Simple daily timeline for last N days.
-
-        Returns:
-            {
-              "user_id": int,
-              "days": int,
-              "points": [
-                {"date": "2025-12-01", "count": 3},
-                ...
-              ]
-            }
-        """
         if days <= 0:
             days = 30
+
+        try:
+            user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        except (ValueError, AttributeError):
+            return {
+                "user_id": user_id,
+                "days": days,
+                "points": [],
+            }
 
         now = datetime.utcnow()
         since = now - timedelta(days=days)
 
-        q = Query()
-        user_records: List[Dict[str, Any]] = self._archives.search(q.user_id == user_id)
+        user_records = self.db.query(ArchiveRecord).filter(ArchiveRecord.user_id == user_uuid).all()
 
         bucket: defaultdict[str, int] = defaultdict(int)
 
         for r in user_records:
-            dt = self._parse_dt(r.get("created_at"))
-            if dt is None:
+            if not r.created_at:
                 continue
-            if dt < since:
+            if r.created_at < since:
                 continue
-            key = dt.date().isoformat()
+            key = r.created_at.date().isoformat()
             bucket[key] += 1
 
-        # Fill missing days with zero for better charts
         points: List[Dict[str, Any]] = []
         for i in range(days + 1):
             d = (since + timedelta(days=i)).date().isoformat()
@@ -187,41 +148,33 @@ class DashboardService:
 
     def get_user_recent_records(
         self,
-        user_id: int,
+        user_id: str,
         limit: int = 20,
     ) -> Dict[str, Any]:
-        """
-        Return last N archive records for the user.
+        try:
+            user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        except (ValueError, AttributeError):
+            return {
+                "user_id": user_id,
+                "limit": limit,
+                "records": [],
+            }
+        
+        records = self.db.query(ArchiveRecord).filter(
+            ArchiveRecord.user_id == user_uuid
+        ).order_by(ArchiveRecord.created_at.desc()).limit(limit).all()
 
-        Result is meant for table views in the dashboard, NOT full export.
-        """
-        q = Query()
-        records: List[Dict[str, Any]] = self._archives.search(q.user_id == user_id)
-
-        # Sort by created_at desc (best effort)
-        def sort_key(r: Dict[str, Any]) -> Any:
-            dt = self._parse_dt(r.get("created_at"))
-            if dt is None:
-                return datetime.min
-            return dt
-
-        records_sorted = sorted(records, key=sort_key, reverse=True)
-        limited = records_sorted[: max(0, limit)]
-
-        # Thin projection to keep payload small
         projected: List[Dict[str, Any]] = []
-        for r in limited:
-            projected.append(
-                {
-                    "archive_id": r.get("archive_id"),
-                    "created_at": r.get("created_at"),
-                    "title": r.get("title"),
-                    "artist": r.get("artist"),
-                    "label": r.get("label"),
-                    "file_path": r.get("file_path"),
-                    "confidence": r.get("confidence"),
-                }
-            )
+        for r in records:
+            projected.append({
+                "archive_id": str(r.id),
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "title": r.title,
+                "artist": r.artist,
+                "label": r.label,
+                "file_path": r.file_path,
+                "confidence": r.confidence,
+            })
 
         return {
             "user_id": user_id,
@@ -229,15 +182,8 @@ class DashboardService:
             "records": projected,
         }
 
-    # ------------------------------------------------------------------
-    # Global stats (optional, for admin / overview)
-    # ------------------------------------------------------------------
-
     def get_global_summary(self) -> Dict[str, Any]:
-        """
-        Global summary across all users.
-        """
-        all_records: List[Dict[str, Any]] = self._archives.all()
+        all_records = self.db.query(ArchiveRecord).all()
 
         if not all_records:
             return {
@@ -247,12 +193,12 @@ class DashboardService:
                 "by_file_type": {},
             }
 
-        users = {r.get("user_id") for r in all_records if r.get("user_id") is not None}
+        users = {r.user_id for r in all_records if r.user_id is not None}
         avg_conf = self._safe_confidence(all_records)
 
         file_counter: Counter[str] = Counter()
         for r in all_records:
-            fp = r.get("file_path") or ""
+            fp = r.file_path or ""
             file_counter[self._file_type_from_path(fp)] += 1
 
         return {
@@ -263,5 +209,5 @@ class DashboardService:
         }
 
 
-# Global instance
-dashboard_service = DashboardService()
+def get_dashboard_service(db: Session) -> DashboardService:
+    return DashboardService(db)

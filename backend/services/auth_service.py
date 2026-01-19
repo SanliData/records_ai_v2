@@ -1,84 +1,127 @@
 # -*- coding: utf-8 -*-
-# ======================================================
-# DEPRECATED – Replaced by the UPAP pipeline
-# Do NOT use. Scheduled for removal in V2 cleanup.
-# ======================================================
-# backend/services/auth_service.py
-# UTF-8 â€” English only
 
-from tinydb import where
-from backend.db import db
+import logging
 import requests
+from datetime import datetime, timedelta
+from typing import Optional, Dict
+from jose import JWTError, jwt
+import bcrypt
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from backend.models.user import User
+
+logger = logging.getLogger(__name__)
+
+import os
+
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30 * 24 * 60
 
 
 class AuthService:
-    """
-    Simplified email â†’ token login flow stored in TinyDB.
-    No encryption, no JWT, only dev-mode demo auth.
-    """
+    def __init__(self, db: Session):
+        self.db = db
 
-    def __init__(self):
-        self.table = db.table("auth")
+    def hash_password(self, password: str) -> str:
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
 
-    # ---------------------------------------------------
-    # REQUEST LOGIN
-    # ---------------------------------------------------
-    def request_login(self, email: str) -> str:
-        """
-        Create a login token and store it.
-        """
-        import uuid
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        hashed_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
 
-        token = str(uuid.uuid4())
+    def create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None) -> str:
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        return encoded_jwt
 
-        # store a request record
-        self.table.insert({
-            "email": email,
-            "token": token,
-            "verified": False
-        })
-
-        return token
-
-    # ---------------------------------------------------
-    # VERIFY LOGIN
-    # ---------------------------------------------------
-    def verify_token(self, token: str) -> dict:
-        """
-        Verify a login token and activate the session.
-        """
-        row = self.table.get(where("token") == token)
-        if not row:
-            return {"status": "invalid"}
-
-        # mark as verified
-        row["verified"] = True
-
-        # update document
-        self.table.update(row, where("token") == token)
-
-        return {
-            "status": "ok",
-            "email": row["email"]
-        }
-
-    # ---------------------------------------------------
-    # OPTIONAL â€” Lookup verified user by token
-    # ---------------------------------------------------
-    def get_user_by_token(self, token: str):
-        row = self.table.get((where("token") == token) & (where("verified") == True))
-        return row
-
-    # ---------------------------------------------------
-    # GOOGLE OAUTH VERIFICATION
-    # ---------------------------------------------------
-    def verify_google_token(self, google_token: str) -> dict:
-        """
-        Verify Google OAuth token and extract user email.
-        Returns dict with status and email.
-        """
+    def decode_token(self, token: str) -> Optional[Dict]:
         try:
-            # Verify token with Google API
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            return payload
+        except JWTError:
+            return None
+
+    def create_user(self, email: str, password: str, role: str = "user") -> User:
+        if self.get_user_by_email(email):
+            raise ValueError("Email already registered")
+        
+        password_hash = self.hash_password(password)
+        user = User(
+            email=email,
+            password_hash=password_hash,
+            role=role,
+            is_active=True
+        )
+        self.db.add(user)
+        try:
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError("Email already registered")
+
+    def authenticate_user(self, email: str, password: str) -> Optional[User]:
+        user = self.get_user_by_email(email)
+        if not user:
+            return None
+        if not user.is_active:
+            return None
+        if not user.password_hash:
+            return None
+        if not self.verify_password(password, user.password_hash):
+            return None
+        return user
+
+    def get_user_by_id(self, user_id: str) -> Optional[User]:
+        try:
+            return self.db.query(User).filter(User.id == user_id).first()
+        except Exception:
+            return None
+
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        return self.db.query(User).filter(User.email == email).first()
+
+    def get_or_create_user_from_google(self, email: str) -> User:
+        user = self.get_user_by_email(email)
+        if user:
+            if not user.is_active:
+                user.is_active = True
+                self.db.commit()
+            return user
+        
+        user = User(
+            email=email,
+            password_hash=None,
+            role="user",
+            is_active=True
+        )
+        self.db.add(user)
+        try:
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except IntegrityError:
+            self.db.rollback()
+            return self.get_user_by_email(email)
+
+    def verify_google_token(self, google_token: str) -> Dict:
+        try:
             verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={google_token}"
             response = requests.get(verify_url, timeout=10)
             
@@ -87,8 +130,6 @@ class AuthService:
             
             token_data = response.json()
             
-            # Check if token is expired (optional - Google usually handles this)
-            # Check if email is verified
             if not token_data.get("email_verified"):
                 return {"status": "unverified", "error": "Email not verified"}
             
@@ -96,28 +137,19 @@ class AuthService:
             if not email:
                 return {"status": "invalid", "error": "No email in token"}
             
-            # Generate our own token for the session
-            import uuid
-            session_token = str(uuid.uuid4())
-            
-            # Store token in auth table
-            self.table.insert({
-                "email": email,
-                "token": session_token,
-                "verified": True,
-                "auth_provider": "google",
-                "google_id": token_data.get("sub")
-            })
+            user = self.get_or_create_user_from_google(email)
+            token = self.create_access_token({"sub": str(user.id), "email": user.email})
             
             return {
                 "status": "ok",
                 "email": email,
-                "token": session_token
+                "token": token,
+                "user_id": str(user.id)
             }
-            
         except Exception as e:
+            logger.error(f"Google token verification error: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
 
 
-auth_service = AuthService()
-
+def get_auth_service(db: Session) -> AuthService:
+    return AuthService(db)

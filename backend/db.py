@@ -1,18 +1,29 @@
 #backend/db.py
 # UTF-8
 import os
+import logging
 from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# DATABASE_URL is REQUIRED - no SQLite fallback
+logger = logging.getLogger(__name__)
+
+# DATABASE_URL configuration
+# PROD: Must be set (Cloud Run env vars)
+# LOCAL: Falls back to SQLite file if not set
 DATABASE_URL = os.getenv("DATABASE_URL")
+
 if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL environment variable is required. "
-        "Set Cloud SQL connection string in Cloud Run environment variables. "
-        "Example: postgresql://user:pass@host/dbname"
+    # Local development fallback: use SQLite file
+    REPO_ROOT = Path(__file__).resolve().parent.parent
+    SQLITE_PATH = REPO_ROOT / "records_ai_v2.db"
+    DATABASE_URL = f"sqlite:///{SQLITE_PATH}"
+    logger.warning(
+        f"DATABASE_URL not set. Using local SQLite fallback: {DATABASE_URL}. "
+        "Set DATABASE_URL environment variable for production."
     )
+else:
+    logger.info("DATABASE_URL configured from environment")
 
 # Connection args based on database type
 connect_args = {}
@@ -44,17 +55,3 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
 
-# TinyDB instance for legacy services
-# Used by auth_service, dashboard_service, admin_stats_router
-from tinydb import TinyDB
-
-# Ensure storage directory exists
-REPO_ROOT = Path(__file__).resolve().parent.parent
-STORAGE_DIR = REPO_ROOT / "backend" / "storage"
-STORAGE_DIR.mkdir(parents=True, exist_ok=True)
-
-# TinyDB JSON file path
-TINYDB_PATH = STORAGE_DIR / "records.json"
-
-# Global TinyDB instance
-db = TinyDB(str(TINYDB_PATH))

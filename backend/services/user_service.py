@@ -1,62 +1,119 @@
 # -*- coding: utf-8 -*-
 """
-UserService – UPAP Unified Version (V1 + V2 compatible)
-English only – UTF-8 – No emoji
+UserService - FROZEN PUBLIC CONTRACT
+
+Public Methods (DO NOT MODIFY WITHOUT ARCHITECT REVIEW):
+- get_or_create_user(email: str) -> User
+- ensure_user(email: str) -> User (alias for get_or_create_user)
+- create_user(email: str) -> User
+- get_user(user_id: str) -> Optional[User]
+
+This service is used by:
+- AuthStage (UPAP pipeline)
+- AuthRouter (authentication endpoints)
+- UserAuthStage (UPAP user stage)
 """
 
 import uuid
 from datetime import datetime
+from typing import Optional
+from sqlalchemy.orm import Session
 
 from backend.models.user import User
 from backend.services.admin_service import admin_service
+from backend.db import get_db
 
 
 class UserService:
-    def __init__(self):
-        self._users = {}
-        self._email_to_id = {}
+    """
+    User service with frozen public contract.
+    All methods are stable and used by UPAP stages.
+    """
+    
+    def __init__(self, db: Session):
+        self.db = db
 
-    # V1 behavior
     def get_or_create_user(self, email: str) -> User:
-        # Exists
-        if email in self._email_to_id:
-            user_id = self._email_to_id[email]
-            user = self._users[user_id]
-            # Update admin status in case it changed
-            user.is_admin = admin_service.is_admin(email)
+        """
+        PUBLIC METHOD - Get existing user or create new one.
+        
+        Args:
+            email: User email address
+            
+        Returns:
+            User object (existing or newly created)
+            
+        Side effects:
+            - Creates user in database if not exists
+            - Updates user role to admin if email is in admin list
+        """
+        user = self.db.query(User).filter(User.email == email).first()
+        if user:
+            if admin_service.is_admin(email) and user.role != "admin":
+                user.role = "admin"
+                self.db.commit()
+                self.db.refresh(user)
             return user
-
-        # New user - check admin status
-        user_id = str(uuid.uuid4())
+        
         is_admin = admin_service.is_admin(email)
-
         user = User(
-            user_id=user_id,
             email=email,
-            created_at=datetime.utcnow().isoformat(),
-            profile={},
-            token=f"MAGIC-{user_id}",
-            is_admin=is_admin
+            password_hash=None,
+            role="admin" if is_admin else "user",
+            is_active=True
         )
+        self.db.add(user)
+        try:
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except Exception:
+            self.db.rollback()
+            return self.db.query(User).filter(User.email == email).first()
 
-        self._users[user_id] = user
-        self._email_to_id[email] = user_id
-
-        return user
-
-    # V2 behavior (redirect to V1)
     def ensure_user(self, email: str) -> User:
+        """
+        PUBLIC METHOD - Alias for get_or_create_user.
+        Maintained for backward compatibility.
+        """
         return self.get_or_create_user(email)
 
-    # Legacy V1 (keep for compatibility)
     def create_user(self, email: str) -> User:
-        if email in self._email_to_id:
+        """
+        PUBLIC METHOD - Create new user (raises if exists).
+        
+        Args:
+            email: User email address
+            
+        Returns:
+            User object
+            
+        Raises:
+            ValueError: If user already exists
+        """
+        if self.db.query(User).filter(User.email == email).first():
             raise ValueError("Email already registered")
         return self.get_or_create_user(email)
 
-    def get_user(self, user_id: str):
-        return self._users.get(user_id)
+    def get_user(self, user_id: str) -> Optional[User]:
+        """
+        PUBLIC METHOD - Get user by ID.
+        
+        Args:
+            user_id: User UUID (string)
+            
+        Returns:
+            User object or None if not found
+        """
+        try:
+            return self.db.query(User).filter(User.id == user_id).first()
+        except Exception:
+            return None
 
 
-# Global instance
-user_service = UserService()
+def get_user_service(db: Session) -> UserService:
+    """
+    Factory function to create UserService instance.
+    Used by FastAPI dependency injection.
+    """
+    return UserService(db)

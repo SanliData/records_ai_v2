@@ -59,9 +59,7 @@ Access the application:
 - **Upload**: http://127.0.0.1:8000/ui/upload.html
 - **API Docs**: http://127.0.0.1:8000/docs---
 
-## Frontend Pages
-
-### Anonymous Access (No Login Required)
+## Frontend Pages### Anonymous Access (No Login Required)
 - **Home** (`/ui/index.html`) - Explore UPAP platform
 - **Upload & Analyze** (`/ui/upload.html`) - Upload and analyze records
 - **Results Preview** (`/ui/results.html`) - View analysis results
@@ -71,9 +69,7 @@ Access the application:
 - **Library** (`/ui/library.html`) - View personal archive
 - **Login** (`/ui/login.html`) - Sign in / Sign up
 
----
-
-## UPAP Pipeline Compliance
+---## UPAP Pipeline Compliance
 
 All frontend pages use UPAP-compliant endpoints:
 

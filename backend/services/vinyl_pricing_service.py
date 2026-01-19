@@ -9,8 +9,13 @@ import time
 from typing import Dict, Optional, Tuple
 import os
 
-# Discogs API Token (from environment or fallback)
-DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN", "LSZAwZzoglUrbLSkoyFijkxGqQfZ1RKMjyS6a")
+# Discogs API Token (from environment - REQUIRED)
+DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
+if not DISCOGS_TOKEN:
+    raise RuntimeError(
+        "DISCOGS_TOKEN environment variable is required. "
+        "Set it in Cloud Run environment variables or Secret Manager."
+    )
 DISCOGS_BASE_URL = "https://api.discogs.com"
 
 

@@ -1,0 +1,8 @@
+# GitHub Push with Token Authentication
+# Since changes are already committed, just push with token:
+
+git push https://YOUR_GITHUB_TOKEN@github.com/SanliData/records_ai_v2.git main
+
+# Or update remote URL permanently and push:
+git remote set-url origin https://YOUR_GITHUB_TOKEN@github.com/SanliData/records_ai_v2.git
+git push origin main

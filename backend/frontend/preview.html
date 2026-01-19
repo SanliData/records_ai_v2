@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview Record – Novitsky Archive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F9FAFB;
+            color: #111827;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        header {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E7EB;
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .header-nav a {
+            color: #6B7280;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 24px;
+        }
+
+        .header-nav a:hover {
+            color: #111827;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Image Section */
+        .image-section {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #111827;
+        }
+
+        .image-container {
+            position: relative;
+            background: #F3F4F6;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            margin-bottom: 16px;
+        }
+
+        .record-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: zoom-in;
+        }
+
+        .image-zoom-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            cursor: zoom-out;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .image-zoom-overlay.active {
+            display: flex;
+        }
+
+        .zoomed-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        /* Label Section */
+        .label-section {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .label-section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #111827;
+        }
+
+        .label-container {
+            position: relative;
+            background: #F3F4F6;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            margin-bottom: 16px;
+        }
+
+        .label-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: zoom-in;
+        }
+
+        /* Metadata Section */
+        .metadata-section {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            grid-column: 1 / -1;
+        }
+
+        .metadata-section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #111827;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .metadata-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metadata-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metadata-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: #111827;
+        }
+
+        .metadata-value.empty {
+            color: #9CA3AF;
+            font-style: italic;
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 32px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #4F46E5;
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: #4338CA;
+        }
+
+        .btn-secondary {
+            background: #E5E7EB;
+            color: #111827;
+        }
+
+        .btn-secondary:hover {
+            background: #D1D5DB;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 48px;
+            color: #6B7280;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #E5E7EB;
+            border-top: 3px solid #4F46E5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Success/Error */
+        .alert {
+            display: none;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #10B981;
+        }
+
+        .alert-error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #EF4444;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">📀 Novitsky Archive</div>
+        <nav class="header-nav">
+            <a href="index.html">Home</a>
+            <a href="upload.html">Upload</a>
+            <a href="library.html">Library</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div id="loading" class="loading active">
+            <div class="spinner"></div>
+            <p>Processing record...</p>
+        </div>
+
+        <div id="previewContent" style="display: none;">
+            <div class="alert" id="alertBox"></div>
+
+            <div class="preview-grid">
+                <!-- Full Image -->
+                <div class="image-section">
+                    <h2>📸 Full Image</h2>
+                    <div class="image-container">
+                        <img id="recordImage" class="record-image" src="" alt="Record">
+                    </div>
+                </div>
+
+                <!-- Label Zoom -->
+                <div class="label-section">
+                    <h2>🏷️ Label (Click to Zoom)</h2>
+                    <div class="label-container">
+                        <img id="labelImage" class="label-image" src="" alt="Label">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="metadata-section">
+                <h2>📋 Record Information</h2>
+                <div class="metadata-grid">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Artist</div>
+                        <div class="metadata-value" id="artist">-</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Album</div>
+                        <div class="metadata-value" id="album">-</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Label</div>
+                        <div class="metadata-value" id="label">-</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Year</div>
+                        <div class="metadata-value" id="year">-</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Catalog Number</div>
+                        <div class="metadata-value" id="catalogNumber">-</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">Format</div>
+                        <div class="metadata-value" id="format">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="goBack()">← Back to Upload</button>
+                <button class="btn btn-primary" id="addToArchiveBtn" onclick="addToArchive()">✓ Add to Archive</button>
+            </div>
+        </div>
+
+        <!-- Image Zoom Overlay -->
+        <div class="image-zoom-overlay" id="zoomOverlay" onclick="closeZoom()">
+            <img id="zoomedImg" class="zoomed-image" src="" alt="Zoomed">
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://127.0.0.1:8000'
+            : 'https://api.zyagrolia.com';
+
+        let currentPreviewData = null;
+
+        // Get preview data from URL params or localStorage
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const previewId = urlParams.get('id');
+            const storedData = localStorage.getItem('preview_data');
+
+            if (previewId || storedData) {
+                loadPreview(previewId, storedData);
+            } else {
+                showError('No preview data found. Please upload a record first.');
+            }
+        });
+
+        async function loadPreview(previewId, storedData) {
+            try {
+                let previewData;
+
+                if (storedData) {
+                    previewData = JSON.parse(storedData);
+                } else if (previewId) {
+                    // Fetch from API if needed
+                    const token = localStorage.getItem('auth_token');
+                    const response = await fetch(`${API_BASE}/upap/preview/${previewId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    previewData = await response.json();
+                } else {
+                    throw new Error('No preview data available');
+                }
+
+                currentPreviewData = previewData;
+
+                // Check if multiple records
+                if (previewData.type === 'multiple_records' && previewData.records) {
+                    // Handle multiple records (show first one or all)
+                    if (previewData.records.length > 0) {
+                        displayRecord(previewData.records[0]);
+                    }
+                } else {
+                    displayRecord(previewData);
+                }
+
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('previewContent').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading preview:', error);
+                showError('Failed to load preview: ' + error.message);
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        function displayRecord(record) {
+            // Set images
+            const imageUrl = record.thumbnail_url || record.file_path || record.canonical_image_path;
+            if (imageUrl) {
+                document.getElementById('recordImage').src = imageUrl;
+                document.getElementById('labelImage').src = imageUrl;
+            }
+
+            // Set metadata
+            document.getElementById('artist').textContent = record.artist || '-';
+            document.getElementById('album').textContent = record.album || record.title || '-';
+            document.getElementById('label').textContent = record.label || '-';
+            document.getElementById('year').textContent = record.year || '-';
+            document.getElementById('catalogNumber').textContent = record.catalog_number || '-';
+            document.getElementById('format').textContent = record.format || 'LP';
+
+            // Add empty class to empty fields
+            ['artist', 'album', 'label', 'year', 'catalogNumber'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el.textContent === '-') {
+                    el.classList.add('empty');
+                }
+            });
+
+            // Store for archive action
+            currentPreviewData = record;
+        }
+
+        // Image zoom
+        document.getElementById('recordImage').addEventListener('click', function() {
+            openZoom(this.src);
+        });
+
+        document.getElementById('labelImage').addEventListener('click', function() {
+            openZoom(this.src);
+        });
+
+        function openZoom(imageSrc) {
+            document.getElementById('zoomedImg').src = imageSrc;
+            document.getElementById('zoomOverlay').classList.add('active');
+        }
+
+        function closeZoom() {
+            document.getElementById('zoomOverlay').classList.remove('active');
+        }
+
+        async function addToArchive() {
+            const btn = document.getElementById('addToArchiveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Adding...';
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const recordData = currentPreviewData;
+
+                // Prepare archive data
+                const archiveData = {
+                    preview_id: recordData.preview_id || recordData.record_id,
+                    artist: recordData.artist,
+                    album: recordData.album || recordData.title,
+                    label: recordData.label,
+                    year: recordData.year,
+                    catalog_number: recordData.catalog_number,
+                    country: recordData.country,
+                    format: recordData.format || 'LP',
+                    file_path: recordData.file_path || recordData.canonical_image_path || recordData.thumbnail_url,
+                    matrix_info: recordData.matrix_info,
+                    side: recordData.side,
+                    ocr_text: recordData.ocr_text
+                };
+
+                const response = await fetch(`${API_BASE}/upap/archive/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(archiveData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to add to archive');
+                }
+
+                const result = await response.json();
+
+                // Show success
+                showSuccess('✓ Record added to archive successfully!');
+                
+                // Redirect to library after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'library.html';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error adding to archive:', error);
+                showError('Failed to add to archive: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = '✓ Add to Archive';
+            }
+        }
+
+        function goBack() {
+            window.location.href = 'upload.html';
+        }
+
+        function showSuccess(message) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = 'alert alert-success active';
+        }
+
+        function showError(message) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = 'alert alert-error active';
+        }
+    </script>
+</body>
+</html>

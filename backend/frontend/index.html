@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Records_AI – UPAP-Based Archival Platform</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        header {
+            background: #111;
+            color: #fff;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 0 40px;
+        }
+
+        .hero {
+            background: #fff;
+            padding: 60px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            margin: 0 0 20px 0;
+            font-size: 36px;
+            color: #222;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #666;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 17px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #111;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #333;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #222;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .info-section {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+
+        .info-section h2 {
+            margin-top: 0;
+            color: #222;
+            font-size: 24px;
+        }
+
+        .info-section p {
+            line-height: 1.7;
+            color: #555;
+        }
+
+        .pipeline-steps {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            flex: 1;
+            min-width: 150px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .step-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #111;
+            margin-bottom: 10px;
+        }
+
+        .step-name {
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            font-size: 14px;
+            color: #666;
+        }
+
+        footer {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        footer p {
+            margin: 8px 0;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 16px 20px;
+                flex-wrap: wrap;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .header-nav {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                gap: 8px;
+                margin-top: 16px;
+                padding-top: 16px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .header-nav.active {
+                display: flex;
+            }
+
+            .header-nav a {
+                width: 100%;
+                text-align: center;
+                padding: 12px 16px;
+            }
+
+            .container {
+                padding: 0 20px;
+                margin: 30px auto;
+            }
+
+            .hero {
+                padding: 40px 20px;
+            }
+
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .pipeline-steps {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .info-section {
+                padding: 30px 20px;
+            }
+
+            .info-section h2 {
+                font-size: 20px;
+            }
+
+            footer {
+                padding: 30px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                font-size: 15px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .cta-buttons .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-title">RECORDS_AI</div>
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    <nav class="header-nav" id="mobileNav">
+        <a href="index.html">Home</a>
+        <a href="upload.html">Upload & Analyze</a>
+        <a href="login.html">Sign In / Sign Up</a>
+    </nav>
+</header>
+
+<div class="container">
+    <div class="hero">
+        <h1>UPAP-Based Archival Platform</h1>
+        <p>
+            Upload, analyze, and archive vinyl records using our UPAP pipeline.
+            Sign in to access all features and manage your personal archive.
+        </p>
+        <div class="cta-buttons">
+            <a href="login.html" class="btn btn-primary">Sign In / Sign Up</a>
+            <a href="upload.html" class="btn btn-secondary">Upload & Analyze</a>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2>How It Works</h2>
+        <p>
+            Records_AI operates under the <strong>UPAP pipeline</strong>, a strict workflow that ensures
+            accurate processing and archival of vinyl records:
+        </p>
+        <div class="pipeline-steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-name">Upload</div>
+                <div class="step-desc">Upload your record image</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-name">Archive</div>
+                <div class="step-desc">Store in archive</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-name">Process</div>
+                <div class="step-desc">Analyze and extract metadata</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-name">Publish</div>
+                <div class="step-desc">Make available publicly</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2>Authentication Required</h2>
+        <p>
+            <strong>Sign in required</strong> to use Records_AI. Once logged in, you can:
+        </p>
+        <ul style="line-height: 1.8; color: #555;">
+            <li>Upload record images for analysis</li>
+            <li>View recognition and analysis results</li>
+            <li>Add records to your personal archive</li>
+            <li>View and manage your archives</li>
+            <li>Edit metadata</li>
+            <li>Publish records</li>
+        </ul>
+    </div>
+</div>
+
+<footer>
+    <p><strong>Records_AI (UPAP Tabanlı Arşivleme Platformu)</strong></p>
+    <p>Developed and owned by Merve Emecan Sanli</p>
+    <p style="margin-top: 20px; font-size: 12px; color: #999;">
+        This platform uses a guidance GPT interface for educational and explanatory purposes.
+        Backend operations are handled separately. Errors are reported honestly without retry or masking.
+    </p>
+</footer>
+
+<script>
+// Mobile menu toggle
+function toggleMobileMenu() {
+    const nav = document.getElementById('mobileNav');
+    nav.classList.toggle('active');
+}
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(event) {
+    const nav = document.getElementById('mobileNav');
+    const toggle = document.querySelector('.mobile-menu-toggle');
+    if (nav && toggle && !nav.contains(event.target) && !toggle.contains(event.target)) {
+        nav.classList.remove('active');
+    }
+});
+
+// Check authentication on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const authToken = localStorage.getItem('auth_token');
+    const userEmail = localStorage.getItem('user_email');
+    
+    if (!authToken || !userEmail) {
+        // Not logged in - redirect to login
+        window.location.href = 'login.html?return=' + encodeURIComponent(window.location.pathname);
+    }
+});
+</script>
+
+</body>
+</html>
+
+
+

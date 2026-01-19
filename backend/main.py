@@ -10,9 +10,8 @@ logger = logging.getLogger(__name__)
 # Calculate paths robustly for Cloud Run buildpacks
 # backend/main.py -> backend/ -> repo root
 REPO_ROOT = Path(__file__).resolve().parents[1]
-FRONTEND_DIR = REPO_ROOT / "frontend"
-UPLOAD_HTML = FRONTEND_DIR / "upload.html"
-LOGIN_HTML = FRONTEND_DIR / "login.html"
+# Frontend files are now in backend/frontend/ for Cloud Run
+FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 
 # Create FastAPI app (MUST happen early)
 app = FastAPI(title="Records_AI_V2", version="2.0.0")
@@ -72,6 +71,29 @@ except Exception as e:
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and validate configuration on startup."""
+    # #region agent log
+    import json
+    import time
+    log_path = REPO_ROOT / ".cursor" / "debug.log"
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "startup",
+                "hypothesisId": "startup",
+                "location": "backend/main.py:startup_event",
+                "message": "Startup event triggered",
+                "data": {
+                    "repo_root": str(REPO_ROOT),
+                    "frontend_dir": str(FRONTEND_DIR),
+                    "frontend_exists": FRONTEND_DIR.exists()
+                },
+                "timestamp": int(time.time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
+    
     # Startup verification logs
     logger.info("=" * 60)
     logger.info("STARTUP VERIFICATION")
@@ -79,74 +101,165 @@ async def startup_event():
     logger.info(f"REPO_ROOT={REPO_ROOT}")
     logger.info(f"FRONTEND_DIR={FRONTEND_DIR}")
     logger.info(f"FRONTEND_DIR_EXISTS={FRONTEND_DIR.exists()}")
-    logger.info(f"UPLOAD_HTML_PATH={UPLOAD_HTML}")
-    logger.info(f"FILE_EXISTS={UPLOAD_HTML.exists()}")
+    if FRONTEND_DIR.exists():
+        html_files = list(FRONTEND_DIR.glob("*.html"))
+        logger.info(f"HTML_FILES_COUNT={len(html_files)}")
+        logger.info(f"HTML_FILES={[f.name for f in html_files[:5]]}")
     logger.info("=" * 60)
+    
+    # #region agent log
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "startup",
+                "hypothesisId": "startup",
+                "location": "backend/main.py:startup_event:before_init_db",
+                "message": "Before init_db check",
+                "data": {"init_db_available": init_db is not None},
+                "timestamp": int(time.time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
     
     if init_db:
         try:
             init_db()
             logger.info("Database initialized successfully")
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "startup",
+                        "hypothesisId": "startup",
+                        "location": "backend/main.py:startup_event:init_db_success",
+                        "message": "Database initialized successfully",
+                        "data": {},
+                        "timestamp": int(time.time() * 1000)
+                    }) + "\n")
+            except Exception:
+                pass
+            # #endregion
         except Exception as e:
             logger.error(f"Database initialization failed: {e}", exc_info=True)
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "startup",
+                        "hypothesisId": "startup",
+                        "location": "backend/main.py:startup_event:init_db_error",
+                        "message": "Database initialization failed",
+                        "data": {"error": str(e), "error_type": type(e).__name__},
+                        "timestamp": int(time.time() * 1000)
+                    }) + "\n")
+            except Exception:
+                pass
+            # #endregion
             # Don't raise - allow app to start but log error
     else:
         logger.warning("Database initialization skipped (module not available)")
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "startup",
+                    "hypothesisId": "startup",
+                    "location": "backend/main.py:startup_event:init_db_skipped",
+                    "message": "Database initialization skipped",
+                    "data": {},
+                    "timestamp": int(time.time() * 1000)
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
 
 # Health check endpoint - MUST remain JSON for monitoring
 @app.get("/health")
 def health():
     """Health check endpoint for monitoring."""
+    # #region agent log
+    import json
+    import time
+    log_path = REPO_ROOT / ".cursor" / "debug.log"
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "test",
+                "hypothesisId": "A",
+                "location": "backend/main.py:health",
+                "message": "Health check called",
+                "data": {"endpoint": "/health"},
+                "timestamp": int(time.time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
     return {"status": "ok"}
-
-# Root endpoint - serves upload UI (NEVER JSON)
-@app.get("/")
-async def root():
-    """Root endpoint serves upload page. Always returns HTML, never JSON."""
-    if not UPLOAD_HTML.exists():
-        logger.error(f"UPLOAD_HTML not found at: {UPLOAD_HTML}")
-        # Return simple HTML error, not JSON
-        from fastapi.responses import HTMLResponse
-        return HTMLResponse(
-            content=f"<html><body><h1>Upload UI Not Found</h1><p>Path: {UPLOAD_HTML}</p></body></html>",
-            status_code=500,
-            headers={"Cache-Control": "no-store"}
-        )
-    
-    return FileResponse(
-        str(UPLOAD_HTML),
-        media_type="text/html",
-        headers={"Cache-Control": "no-store, no-cache, must-revalidate"}
-    )
-
-# Serve static frontend files - Use absolute string path for Cloud Run
-if FRONTEND_DIR.exists():
-    app.mount("/ui", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui")
-    logger.info(f"Static files mounted at /ui from {FRONTEND_DIR}")
-else:
-    logger.warning(f"FRONTEND_DIR does not exist: {FRONTEND_DIR}")
-
-# Serve login.html at root level for backward compatibility
-@app.get("/login.html")
-async def login_page():
-    """Serve login.html for backward compatibility."""
-    if LOGIN_HTML.exists():
-        return FileResponse(
-            str(LOGIN_HTML),
-            media_type="text/html",
-            headers={"Cache-Control": "no-store, no-cache, must-revalidate"}
-        )
-    return JSONResponse({"detail": "Not Found"}, status_code=404)
 
 # API Routers - OPTIONAL (wrap each to prevent crash)
 ROUTERS_LOADED = []
+
+# #region agent log
+import json
+import time
+log_path = REPO_ROOT / ".cursor" / "debug.log"
+try:
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps({
+            "sessionId": "debug-session",
+            "runId": "router_loading",
+            "hypothesisId": "router_imports",
+            "location": "backend/main.py:before_router_imports",
+            "message": "Starting router imports",
+            "data": {},
+            "timestamp": int(time.time() * 1000)
+        }) + "\n")
+except Exception:
+    pass
+# #endregion
 
 try:
     from backend.api.v1.upap_upload_router import router as upap_upload_router
     app.include_router(upap_upload_router)
     ROUTERS_LOADED.append("upap_upload")
+    # #region agent log
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "router_loading",
+                "hypothesisId": "router_imports",
+                "location": "backend/main.py:upap_upload_router",
+                "message": "Router loaded successfully",
+                "data": {"router": "upap_upload"},
+                "timestamp": int(time.time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
 except Exception as e:
     logger.error(f"Failed to load upap_upload_router: {e}", exc_info=True)
+    # #region agent log
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "router_loading",
+                "hypothesisId": "router_imports",
+                "location": "backend/main.py:upap_upload_router",
+                "message": "Router failed to load",
+                "data": {"router": "upap_upload", "error": str(e), "error_type": type(e).__name__},
+                "timestamp": int(time.time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
 
 try:
     from backend.api.v1.upap_process_router import router as upap_process_router
@@ -222,8 +335,38 @@ try:
     from backend.api.v1.auth_router import router as auth_router
     app.include_router(auth_router)
     ROUTERS_LOADED.append("auth")
+    # #region agent log
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "router_loading",
+                "hypothesisId": "router_imports",
+                "location": "backend/main.py:auth_router",
+                "message": "Router loaded successfully",
+                "data": {"router": "auth"},
+                "timestamp": int(time.time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
 except Exception as e:
     logger.error(f"Failed to load auth_router: {e}", exc_info=True)
+    # #region agent log
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "router_loading",
+                "hypothesisId": "router_imports",
+                "location": "backend/main.py:auth_router",
+                "message": "Router failed to load",
+                "data": {"router": "auth", "error": str(e), "error_type": type(e).__name__},
+                "timestamp": int(time.time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
 
 try:
     from backend.api.v1.admin_router import router as admin_router
@@ -236,6 +379,40 @@ except Exception as e:
 logger.info(f"Routers loaded: {len(ROUTERS_LOADED)}/{14}")
 if ROUTERS_LOADED:
     logger.info(f"Loaded routers: {', '.join(ROUTERS_LOADED)}")
+
+# Mount static frontend files at root - MUST be AFTER all routers
+# This ensures API routes (/api/v1/*, /auth/*, etc.) take precedence
+# StaticFiles with html=True will serve index.html for / and other HTML files
+if FRONTEND_DIR.exists():
+    # #region agent log
+    import json
+    log_path = REPO_ROOT / ".cursor" / "debug.log"
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "setup",
+                "hypothesisId": "A",
+                "location": "backend/main.py:mount_static",
+                "message": "Mounting static files",
+                "data": {
+                    "frontend_dir": str(FRONTEND_DIR),
+                    "exists": FRONTEND_DIR.exists(),
+                    "files": list(FRONTEND_DIR.glob("*.html")) if FRONTEND_DIR.exists() else []
+                },
+                "timestamp": int(__import__("time").time() * 1000)
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
+    app.mount(
+        "/",
+        StaticFiles(directory=str(FRONTEND_DIR), html=True),
+        name="frontend"
+    )
+    logger.info(f"Static files mounted at / from {FRONTEND_DIR}")
+else:
+    logger.warning(f"FRONTEND_DIR does not exist: {FRONTEND_DIR}")
 
 # Local run support
 if __name__ == "__main__":

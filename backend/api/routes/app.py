@@ -8,7 +8,13 @@ router = APIRouter()
 # Simple Bearer Token Auth (ChatGPT App MVP)
 # -------------------------------------------------------------------
 
-SERVICE_TOKEN = "recordsai-chatgpt-app-token"
+import os
+SERVICE_TOKEN = os.getenv("SERVICE_TOKEN")
+if not SERVICE_TOKEN:
+    raise RuntimeError(
+        "SERVICE_TOKEN environment variable is required for ChatGPT App integration. "
+        "Set it in Cloud Run environment variables or Secret Manager."
+    )
 
 
 def require_token(authorization: Optional[str]):

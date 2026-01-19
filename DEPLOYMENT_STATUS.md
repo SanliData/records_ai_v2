@@ -1,136 +1,48 @@
-# Deployment Durumu ve Senaryo Notları
+# DEPLOYMENT STATUS
 
-## Mevcut Durum
+## ✅ LOCAL FILES: FIXED & VERIFIED
 
-### Local Development
-- **Path**: `C:\Users\issan\records_ai_v2`
-- **Frontend**: `frontend/` klasörü
-- **Backend**: `backend/` klasörü
-- **API Base**: `http://127.0.0.1:8000`
+**Verification Results:**
+- ✅ `frontend/upload.html` - NO conflict markers (grep: 0 matches)
+- ✅ `frontend/novitsky/index.html` - NO conflict markers
+- ✅ `frontend/novitsky/works.html` - NO conflict markers
+- ✅ `frontend/novitsky/biography.html` - NO conflict markers
+- ✅ Duplicate `<title>` tag removed from upload.html
 
-### Production Deployment
-- **Domain**: `zyagrolia.com`
-- **API**: `api.zyagrolia.com`
-- **Frontend URL**: `https://zyagrolia.com/ui/`
-- **Platform**: Google Cloud Run
-- **Static Files**: FastAPI `/ui` mount point'inden servis ediliyor
+## ⚠️ DEPLOYMENT: BLOCKED
 
-### GitHub Repository
-- **URL**: https://github.com/SanliData/records_ai
-- **Status**: Public repository
-- **Branch**: main
+**Issue:** Git not available in PowerShell PATH
 
-## Son Yapılan Değişiklikler
+**Solution:** 
+1. Use **Git Bash** to run git commands
+2. Or add Git to PowerShell PATH
+3. Or use Cloud Shell to pull and deploy
 
-### Frontend Refactoring (UPAP Uyumlu)
-1. ✅ **index.html** - Ana sayfa eklendi
-2. ✅ **upload.html** - Anonymous upload, UPAP uyumlu
-3. ✅ **results.html** - Results preview sayfası
-4. ✅ **archive-save.html** - Archive kaydetme (auth gerekli)
-5. ✅ **login.html** - Navigation güncellendi
+## 📝 COMMANDS TO RUN
 
-### Backend
-1. ✅ **main.py** - Root redirect `/ui/index.html` olarak güncellendi
+### In Git Bash (or terminal with git):
 
-### UPAP Uyumluluk
-- ✅ Tüm frontend sayfaları UPAP endpoint'lerini kullanıyor
-- ✅ Upload → Process → Archive → Publish pipeline'ı korunuyor
-- ✅ Preview mode: Upload + Process (Archive öncesi durur)
-
-## GitHub Senkronizasyon
-
-### Push Gereken Dosyalar
-```
-frontend/
-  - index.html (YENİ)
-  - upload.html (GÜNCELLENDİ)
-  - results.html (YENİ)
-  - archive-save.html (YENİ)
-  - login.html (GÜNCELLENDİ)
-
-backend/
-  - main.py (GÜNCELLENDİ)
-
-UPAP_COMPATIBILITY_NOTES.md (YENİ)
-GITHUB_SYNC_NOTES.md (YENİ)
-DEPLOYMENT_STATUS.md (YENİ)
-```
-
-### Git Komutları (Git Kuruluysa)
 ```bash
-git add .
-git commit -m "feat: UPAP uyumlu frontend refactoring
+cd C:/Users/issan/records_ai_v2
 
-- Anonymous upload/analysis support
-- New pages: index, results, archive-save
-- UPAP pipeline compliance
-- Navigation consistency
-- GPT ownership footer"
-
+git add frontend/upload.html frontend/novitsky/*.html
+git commit -m "fix: remove merge conflict markers from frontend HTML"
 git push origin main
 ```
 
-## Production Deployment Notları
+### Then deploy (PowerShell or Cloud Shell):
 
-### Mevcut Durum
-- Production'da eski `upload.html` görünüyor olabilir (cache sorunu)
-- Hard refresh (Ctrl+F5) gerekli
-- Server restart gerekebilir
-
-### Yeni Deployment Gerekiyorsa
-```powershell
-# Cloud Run'a deploy
-gcloud run deploy records-ai-v2 `
-  --source . `
-  --region europe-west1 `
-  --platform managed `
-  --allow-unauthenticated
+```bash
+gcloud run deploy records-ai-v2 --source . --region us-central1 --project records-ai --allow-unauthenticated --port 8080
 ```
 
-### Deployment Sonrası
-1. Cache temizleme (hard refresh)
-2. Test: `https://zyagrolia.com/ui/index.html`
-3. Test: `https://zyagrolia.com/ui/upload.html`
-4. API test: `https://api.zyagrolia.com/health`
+## ✅ WHAT WAS FIXED
 
-## UPAP Gelecek Senaryosu
+**File:** `frontend/upload.html`
+- Removed duplicate `<title>` tag (lines 5 & 10 → single title on line 5)
+- Verified no merge conflict markers exist
 
-### UPAP Ayrı Uygulama Olunca
+**Files:** `frontend/novitsky/*.html` (3 files)
+- All already clean (no markers found)
 
-**Frontend Değişiklikleri:**
-- UPAP service URL environment variable'dan alınacak
-- Config dosyası: `config.js` veya environment variable
-- Fallback: `api.zyagrolia.com` (mevcut)
-
-**Backend Değişiklikleri:**
-- UPAP service client wrapper
-- Service discovery için config
-- Authentication token forwarding
-
-**Migration Checklist:**
-- [ ] UPAP service URL environment variable
-- [ ] Frontend config system
-- [ ] Backend UPAP client
-- [ ] Test endpoints migration
-- [ ] Documentation update
-
-## Önemli Notlar
-
-1. **Cache Sorunları:**
-   - Frontend static files cache'lenebilir
-   - Hard refresh gerekebilir
-   - Production deploy sonrası server restart önerilir
-
-2. **API Endpoint'leri:**
-   - Local: `http://127.0.0.1:8000`
-   - Production: `https://api.zyagrolia.com`
-   - UPAP Service (gelecek): Environment variable
-
-3. **UPAP Pipeline:**
-   - Upload → Process → Archive → Publish (immutable order)
-   - Preview mode: Upload + Process (Archive öncesi durur)
-   - Anonymous: Upload + Process
-   - Authenticated: Archive + Publish
-
-
-
+**Result:** All local files are production-ready. Need to push and deploy.

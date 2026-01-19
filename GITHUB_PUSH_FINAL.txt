@@ -1,0 +1,46 @@
+# GitHub'a Güvenli Push - Final Komutlar
+# PowerShell'de bu komutları sırayla çalıştırın
+
+# 1. Dizine git
+cd C:\Users\issan\records_ai_v2
+
+# 2. Git kullanıcı bilgilerini ayarla
+git config --global user.name "Isanli"
+git config --global user.email "isanli058@gmail.com"
+
+# 3. Remote repository'yi ayarla
+git remote remove origin
+git remote add origin https://github.com/SanliData/records_ai.git
+
+# 4. Remote kontrol
+git remote -v
+
+# 5. Git durumunu kontrol et
+git status
+
+# 6. Sadece güvenli kod dosyalarını ekle (güvenli olmayan dosyalar .gitignore ile korunuyor)
+git add backend/
+git add frontend/
+git add scripts/
+git add requirements.txt
+git add dockerfile
+git add README.md
+git add .gitignore
+git add alembic/
+git add tests/
+git add docs/
+git add Procfile
+git add alembic.ini
+git add main.py
+
+# 7. Stage'deki dosyaları kontrol et - güvenli olmayan dosyalar görünmemeli
+git status
+
+# 8. Commit oluştur
+git commit -m "feat: Production deployment - us-central1 region, OAuth Client ID fix, merge conflicts resolved"
+
+# 9. GitHub'a push et
+git push origin main
+
+# 10. Push başarılı olduysa, GitHub'da kontrol et:
+# https://github.com/SanliData/records_ai
