@@ -512,7 +512,7 @@
                     ocr_text: recordData.ocr_text
                 };
 
-                const response = await fetch(`${API_BASE}/upap/archive/add`, {
+                const response = await fetch(`${API_BASE}/api/v1/upap/archive/add`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

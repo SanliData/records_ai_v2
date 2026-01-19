@@ -417,6 +417,30 @@ if FRONTEND_DIR.exists():
 else:
     logger.warning(f"FRONTEND_DIR does not exist: {FRONTEND_DIR}")
 
+# Mount storage directory for serving uploaded images
+STORAGE_DIR = REPO_ROOT / "storage"
+if STORAGE_DIR.exists():
+    try:
+        app.mount(
+            "/storage",
+            StaticFiles(directory=str(STORAGE_DIR)),
+            name="storage"
+        )
+        logger.info(f"Storage files mounted at /storage from {STORAGE_DIR}")
+    except Exception as e:
+        logger.warning(f"Failed to mount storage directory: {e}")
+else:
+    STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        app.mount(
+            "/storage",
+            StaticFiles(directory=str(STORAGE_DIR)),
+            name="storage"
+        )
+        logger.info(f"Storage directory created and mounted at /storage")
+    except Exception as e:
+        logger.warning(f"Failed to mount storage directory: {e}")
+
 # Local run support
 if __name__ == "__main__":
     import uvicorn

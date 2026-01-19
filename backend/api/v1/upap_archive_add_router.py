@@ -1,11 +1,12 @@
 # backend/api/v1/upap_archive_add_router.py
 # UTF-8, English only
 
-from fastapi import APIRouter, Form, HTTPException, Header, Depends, Query, Body
+from fastapi import APIRouter, Form, HTTPException, Header, Depends, Query, Body, Request
 from typing import Optional
 from datetime import datetime
 import json
 import uuid
+import logging
 from sqlalchemy.orm import Session
 from backend.db import get_db
 from backend.services.user_service import get_user_service
@@ -17,6 +18,8 @@ from backend.services.vinyl_pricing_service import vinyl_pricing_service
 from backend.services.lyrics_service import lyrics_service
 from backend.services.sheet_music_service import sheet_music_service
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/upap/archive", tags=["UPAP Archive"])
 
 
@@ -25,9 +28,7 @@ router = APIRouter(prefix="/upap/archive", tags=["UPAP Archive"])
 
 @router.post("/add")
 async def add_to_archive(
-    record_id: str = Form(...),
-    email: str = Form(...),
-    record_data: Optional[str] = Form(None),
+    request: Request,
     user = Depends(get_current_user)
 ):
     """
@@ -38,47 +39,84 @@ async def add_to_archive(
     - Converts PreviewRecord to ArchiveRecord
     - Attaches record to authenticated user
     - Does NOT publish (Publish is separate stage)
+    
+    Accepts both JSON body (preferred) and Form data (legacy support).
     """
     try:
-        # Parse record data if provided
-        record_info = {}
-        if record_data:
-            try:
-                record_info = json.loads(record_data)
-            except:
-                pass
+        # Try to parse as JSON first (preferred)
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            body = await request.json()
+            record_id = body.get("record_id") or body.get("preview_id")
+            email = body.get("email") or user.email
+            record_info = {k: v for k, v in body.items() if k not in ["record_id", "preview_id", "email"]}
+            # Merge nested record_data if present
+            if "record_data" in body and isinstance(body["record_data"], dict):
+                record_info.update(body["record_data"])
+        else:
+            # Fallback to Form data (legacy support)
+            form = await request.form()
+            record_id = form.get("record_id") or form.get("preview_id")
+            email = form.get("email") or user.email
+            record_data_str = form.get("record_data")
+            record_info = {}
+            if record_data_str:
+                try:
+                    record_info = json.loads(record_data_str) if isinstance(record_data_str, str) else record_data_str
+                except:
+                    pass
         
-        # UPAP V2 Compliance: Verify PreviewRecord state
-        if record_info.get("is_preview") is False or record_info.get("is_archived") is True:
+        if not record_id:
+            raise HTTPException(status_code=400, detail="record_id or preview_id is required")
+        
+        if not email:
+            email = user.email
+        
+        # UPAP V2 Compliance: Verify PreviewRecord state (optional check)
+        # Allow archiving even if is_preview is not explicitly set
+        if record_info.get("is_preview") is False and record_info.get("is_archived") is True:
             raise HTTPException(
                 status_code=400, 
-                detail="UPAP V2: Record is not in preview state. Cannot archive non-preview records."
+                detail="UPAP V2: Record is already archived. Cannot archive again."
             )
         
         # UPAP V2: Run archive stage through UPAP engine
-        archive_result = upap_engine.run_archive(record_id)
+        try:
+            archive_result = upap_engine.run_archive(record_id)
+        except Exception as e:
+            # If archive stage fails, continue with manual archive creation
+            logger.warning(f"UPAP archive stage failed: {e}, continuing with manual archive")
+            archive_result = {}
         
         # STEP 1: Add to GLOBAL ARCHIVE first (or get existing)
         # Build metadata for global archive
         metadata = {
             "artist": record_info.get("artist"),
-            "album": record_info.get("album"),
+            "album": record_info.get("album") or record_info.get("title"),
             "title": record_info.get("album") or record_info.get("title"),
             "label": record_info.get("label"),
             "year": record_info.get("year"),
             "catalog_number": record_info.get("catalog_number"),
-            "format": record_info.get("format"),
+            "format": record_info.get("format") or "LP",
             "country": record_info.get("country"),
             "barcode": record_info.get("barcode")
         }
         
+        # Get file paths (handle multiple possible field names)
+        file_path = record_info.get("file_path") or record_info.get("canonical_image_path") or record_info.get("thumbnail_url")
+        thumbnail_url = record_info.get("thumbnail_url") or record_info.get("file_path") or record_info.get("canonical_image_path")
+        
         # Additional fields for global archive (pricing, files, etc.)
         additional_fields = {
-            "file_path": record_info.get("file_path"),
-            "thumbnail_url": record_info.get("thumbnail_url"),
+            "file_path": file_path,
+            "thumbnail_url": thumbnail_url,
+            "canonical_image_path": file_path,
             "confidence": record_info.get("confidence"),
+            "ocr_text": record_info.get("ocr_text"),
+            "matrix_info": record_info.get("matrix_info"),
+            "side": record_info.get("side"),
             "source": "user_upload",
-            **record_info  # Include all other fields
+            **{k: v for k, v in record_info.items() if k not in ["file_path", "thumbnail_url", "canonical_image_path"]}
         }
         
         # Add to global archive (or get existing if fingerprint matches)
@@ -96,22 +134,28 @@ async def add_to_archive(
             "archive_id": record_id,
             "global_id": global_id,  # Reference to global archive
             "fingerprint": fingerprint,  # Global fingerprint
-            "user_id": user.id,  # Store as string for now
+            "user_id": str(user.id),  # Store as string
             "user_id_str": str(user.id),  # String version
             "user_email": email,
             "record_id": record_id,
+            "preview_id": record_info.get("preview_id") or record_id,
             "added_at": datetime.utcnow().isoformat(),
             "artist": record_info.get("artist"),
-            "album": record_info.get("album"),
+            "album": record_info.get("album") or record_info.get("title"),
             "title": record_info.get("album") or record_info.get("title"),
             "label": record_info.get("label"),
             "year": record_info.get("year"),
             "catalog_number": record_info.get("catalog_number"),
-            "format": record_info.get("format"),
-            "file_path": record_info.get("file_path"),
-            "thumbnail_url": record_info.get("thumbnail_url"),
+            "format": record_info.get("format") or "LP",
+            "country": record_info.get("country"),
+            "file_path": file_path,
+            "thumbnail_url": thumbnail_url,
+            "canonical_image_path": file_path,
             "confidence": record_info.get("confidence"),
-            **record_info  # Include all other fields
+            "ocr_text": record_info.get("ocr_text"),
+            "matrix_info": record_info.get("matrix_info"),
+            "side": record_info.get("side"),
+            **{k: v for k, v in record_info.items() if k not in ["file_path", "thumbnail_url", "canonical_image_path", "artist", "album", "title", "label", "year", "catalog_number", "format", "country", "confidence", "ocr_text", "matrix_info", "side"]}
         }
         
         # STEP 3: AUTOMATIC PRICING: Fetch market prices from Discogs

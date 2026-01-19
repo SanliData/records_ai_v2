@@ -170,7 +170,20 @@ async def upload(
             }
             response["ocr_text"] = recognition_result.get("ocr_text", "")
             response["recognition_source"] = recognition_result.get("source", "novarchive_gpt")
-            response["file_path"] = str(temp_file)  # Store path for later use
+            
+            # Convert file path to URL-accessible path
+            # temp_file is like: storage/temp/{user_id}/{record_id}_{filename}
+            # Convert to: /storage/temp/{user_id}/{record_id}_{filename}
+            file_path_str = str(temp_file).replace("\\", "/")
+            if file_path_str.startswith("storage/"):
+                response["file_path"] = f"/{file_path_str}"
+                response["thumbnail_url"] = f"/{file_path_str}"
+                response["canonical_image_path"] = f"/{file_path_str}"
+            else:
+                response["file_path"] = file_path_str
+                response["thumbnail_url"] = file_path_str
+                response["canonical_image_path"] = file_path_str
+            
             response["message"] = "Cover image received and analyzed."
             
             # Clean up temp file if needed (optional - can keep for preview)

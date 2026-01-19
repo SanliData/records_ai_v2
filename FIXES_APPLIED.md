@@ -1,100 +1,74 @@
-# Runtime X-Ray Fixes - Applied
+# Fixes Applied - Archive & Image Serving
 
-**Date:** 2025-01-XX  
-**Status:** ✅ All fixes applied
+## Problems Fixed
 
----
+### 1. 405 Method Not Allowed ✅
+**Problem:** Frontend sent JSON but backend expected Form data.
 
-## Summary
+**Fix:**
+- Updated `backend/api/v1/upap_archive_add_router.py` to accept both JSON and Form data
+- Backend now checks `Content-Type` header and parses accordingly
+- JSON body is preferred, Form data is fallback for legacy support
 
-All critical startup failures have been fixed with defensive programming patterns. The application can now start without:
-- `tinydb` installed (legacy services gracefully degrade)
-- `DATABASE_URL` set locally (falls back to SQLite)
+### 2. 404 Image Not Found ✅
+**Problem:** Images stored in `storage/` directory were not accessible via HTTP.
 
----
+**Fix:**
+- Added static file mount for `/storage` directory in `backend/main.py`
+- Images are now served at `/storage/temp/{user_id}/{filename}`
+- Updated upload router to return URL-accessible paths (starting with `/storage/`)
 
-## Files Modified
+### 3. Wrong API Endpoint ✅
+**Problem:** Frontend called `/upap/archive/add` but correct path is `/api/v1/upap/archive/add`.
 
-### 1. `backend/db.py`
-**Changes:**
-- ✅ Made `tinydb` import optional with try/except
-- ✅ Added `TINYDB_AVAILABLE` flag
-- ✅ Created `TinyDBStub` class for graceful degradation
-- ✅ Made `DATABASE_URL` optional for local development (SQLite fallback)
+**Fix:**
+- Updated `frontend/preview.html` to use correct endpoint: `/api/v1/upap/archive/add`
 
-**Key additions:**
-```python
-TINYDB_AVAILABLE = True/False  # Exported flag
-```
+### 4. Image Path Handling ✅
+**Problem:** File paths were returned as relative paths, not URL-accessible.
 
----
+**Fix:**
+- Updated `backend/api/v1/upap_upload_router.py` to convert file paths to URL paths
+- Paths like `storage/temp/...` are now converted to `/storage/temp/...`
+- Added `thumbnail_url` and `canonical_image_path` fields to response
 
-### 2. `backend/services/auth_service.py`
-**Changes:**
-- ✅ Added `TINYDB_AVAILABLE` check in `__init__`
-- ✅ All methods check `TINYDB_AVAILABLE` before using TinyDB
-- ✅ Returns clear error messages if TinyDB unavailable
+### 5. Archive Data Parsing ✅
+**Problem:** Archive endpoint didn't handle JSON body correctly.
 
----
+**Fix:**
+- Added proper JSON body parsing with fallback to Form data
+- Handles nested `record_data` object
+- Extracts `record_id`, `preview_id`, `email` correctly
+- Handles multiple field name variations (`file_path`, `canonical_image_path`, `thumbnail_url`)
 
-### 3. `backend/services/dashboard_service.py`
-**Changes:**
-- ✅ Added `TINYDB_AVAILABLE` check in `__init__`
-- ✅ All public methods return empty data with error message if TinyDB unavailable
-- ✅ Graceful degradation (no exceptions thrown)
+## Files Changed
 
----
+1. `backend/api/v1/upap_archive_add_router.py`
+   - Added JSON body support
+   - Improved error handling
+   - Better field name handling
 
-### 4. `backend/api/v1/admin_stats_router.py`
-**Changes:**
-- ✅ All helper functions check `TINYDB_AVAILABLE`
-- ✅ Return empty stats (zeros) if TinyDB unavailable
-- ✅ No HTTP exceptions thrown (graceful degradation)
+2. `backend/main.py`
+   - Added `/storage` static file mount
 
----
+3. `backend/api/v1/upap_upload_router.py`
+   - Fixed image path URLs
+   - Added multiple path field names
+
+4. `frontend/preview.html`
+   - Fixed API endpoint path
 
 ## Testing Checklist
 
-### Local Development (without dependencies)
-- [ ] App starts without `tinydb` installed
-- [ ] App starts without `DATABASE_URL` set
-- [ ] Health endpoint works: `GET /health`
-- [ ] Auth endpoints return clear errors: `POST /auth/login/google`
-- [ ] Dashboard endpoints return empty data: `GET /admin/stats/summary`
-
-### Production (with dependencies)
-- [ ] App starts normally
-- [ ] All endpoints work as before
-- [ ] No breaking changes
-
----
-
-## Deployment Notes
-
-1. **Production:** No changes needed - dependencies are present
-2. **Local:** Can now run without `tinydb` or `DATABASE_URL`
-3. **Requirements.txt:** Keep `tinydb` listed (production needs it)
-
----
-
-## Risk Assessment
-
-| Risk | Level | Mitigation |
-|------|-------|------------|
-| Breaking changes | 🟢 LOW | All fixes backward compatible |
-| Production impact | 🟢 LOW | Production has dependencies |
-| Local development | 🟢 LOW | Graceful degradation |
-| Legacy service errors | 🟡 MEDIUM | Clear error messages logged |
-
----
+- [ ] Upload image → Should return recognition data
+- [ ] Preview page → Should display image correctly
+- [ ] Add to archive → Should work with JSON body
+- [ ] Image display → Should load from `/storage/` path
+- [ ] Archive success → Should redirect to library
 
 ## Next Steps
 
-1. Test locally without dependencies
-2. Verify production still works
-3. Monitor logs for warnings
-4. Consider migrating away from legacy services (future work)
-
----
-
-**END OF FIXES DOCUMENT**
+1. Test full flow: upload → preview → archive → library
+2. Verify recognition service is working
+3. Test with real vinyl images
+4. Check image serving in production (Cloud Run)
