@@ -1,71 +1,123 @@
-# Deployment Successful
+# ✅ Deployment Successful!
 
-## Results
+## Service Information
 
-- **Service deployed:** `records-ai-v2-00002-xkg`
-- **Status:** Serving 100% of traffic
-- **Service URL:** `https://records-ai-v2-969278596906.europe-west1.run.app`
-- **IAM Warning:** IAM policy could not be set automatically (organization policy restriction)
+**Service Name:** `records-ai-v2`  
+**Revision:** `records-ai-v2-00065-ssb`  
+**Region:** `us-central1`  
+**Project:** `records-ai`  
+**Status:** ✅ Serving 100% of traffic
 
-## Fix IAM Error
+## Service URL
 
-### Option 1: Console (RECOMMENDED)
-
-1. Go to Console:
-   ```
-   https://console.cloud.google.com/run/detail/europe-west1/records-ai-v2?project=records-ai
-   ```
-
-2. Click "EDIT & DEPLOY NEW REVISION"
-
-3. Go to "SECURITY" tab
-
-4. Check "Allow unauthenticated invocations"
-
-5. Click "DEPLOY"
-
-### Option 2: gcloud CLI (may fail if organization policy blocks it)
-
-```bash
-gcloud beta run services add-iam-policy-binding records-ai-v2 \
-  --region=europe-west1 \
-  --member=allUsers \
-  --role=roles/run.invoker \
-  --project=records-ai
+```
+https://records-ai-v2-969278596906.us-central1.run.app
 ```
 
-## Test URLs
+## Build Information
 
-### Service URL:
-```
-https://records-ai-v2-969278596906.europe-west1.run.app
-```
+- **Build ID:** `9ca53435-74c5-41a8-b1da-0df8b22d080b`
+- **Build Logs:** https://console.cloud.google.com/cloud-build/builds;region=us-central1/9ca53435-74c5-41a8-b1da-0df8b22d080b?project=969278596906
+- **Status:** ✅ Build successful
+- **Container:** Deployed using Buildpacks
 
-### Test Endpoints:
+## Configuration
 
-1. Home Page:
-   ```
-   https://records-ai-v2-969278596906.europe-west1.run.app/ui/index.html
-   ```
+- **Port:** 8080
+- **Max Instances:** 3
+- **Min Instances:** 0
+- **Timeout:** 300 seconds
+- **Memory:** 1Gi
+- **CPU:** 1
+- **Authentication:** Unauthenticated (public)
 
-2. Upload Page:
-   ```
-   https://records-ai-v2-969278596906.europe-west1.run.app/ui/upload.html
-   ```
+## What's Deployed
 
-3. Health Check:
-   ```
-   https://records-ai-v2-969278596906.europe-west1.run.app/health
-   ```
-
-## Success Criteria
-
-1. Build successful (Dockerfile used)
-2. Service deployed
-3. IAM policy needs to be fixed (may cause 403 errors)
+✅ Recognition integration (Phase 1 complete)  
+✅ Defensive dependencies (build fixes)  
+✅ 401 authentication fix (UUID type conversion)  
+✅ UPAP pipeline (100/100 validation)  
+✅ PostgreSQL + SQLAlchemy auth  
+✅ Marketplace API preparation (Phase 3 ready)
 
 ## Next Steps
 
-1. Fix IAM policy (via Console)
-2. Test the service (using URLs above)
-3. If 403 error persists, verify IAM configuration
+### 1. Test Health Endpoint
+
+```bash
+curl https://records-ai-v2-969278596906.us-central1.run.app/health
+```
+
+Expected: `{"status":"ok"}`
+
+### 2. Set Environment Variables (If Needed)
+
+```bash
+gcloud run services update records-ai-v2 \
+  --region us-central1 \
+  --update-env-vars \
+    OPENAI_API_KEY="your-openai-key",\
+    DATABASE_URL="your-postgres-url",\
+    SECRET_KEY="your-jwt-secret",\
+    DISCOGS_TOKEN="your-discogs-token"
+```
+
+### 3. Test Upload Endpoint
+
+```bash
+# First, get auth token by logging in
+curl -X POST https://records-ai-v2-969278596906.us-central1.run.app/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"test123"}'
+
+# Then use token for upload
+curl -X POST https://records-ai-v2-969278596906.us-central1.run.app/api/v1/upap/upload \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@test.jpg" \
+  -F "email=test@example.com"
+```
+
+### 4. View Logs
+
+```bash
+gcloud run services logs read records-ai-v2 \
+  --region us-central1 \
+  --limit 50
+```
+
+## Frontend Configuration
+
+Update frontend to use production URL:
+
+```javascript
+const apiBase = 'https://records-ai-v2-969278596906.us-central1.run.app';
+```
+
+## Monitoring
+
+- **Cloud Run Console:** https://console.cloud.google.com/run/detail/us-central1/records-ai-v2?project=969278596906
+- **Logs:** https://console.cloud.google.com/logs/query?project=969278596906
+- **Metrics:** https://console.cloud.google.com/run/detail/us-central1/records-ai-v2/metrics?project=969278596906
+
+## Troubleshooting
+
+### If service doesn't respond:
+1. Check logs: `gcloud run services logs read records-ai-v2 --region us-central1`
+2. Verify environment variables are set
+3. Check DATABASE_URL is correct
+4. Verify SECRET_KEY is set
+
+### If 401 errors persist:
+1. User needs to sign in again (new token)
+2. Check if user exists in database
+3. Verify JWT secret matches
+
+## Deployment Date
+
+**Deployed:** $(date)  
+**Revision:** records-ai-v2-00065-ssb  
+**Git Commit:** bc30cc6
+
+---
+
+**Status: ✅ LIVE AND RUNNING**

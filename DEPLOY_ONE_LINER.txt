@@ -1,0 +1,4 @@
+# Cloud Run Deploy - One Liner
+# Copy and paste this into Google Cloud Shell
+
+cd ~/records_ai_v2 && git pull origin main && gcloud config set project records-ai && gcloud run deploy records-ai-v2 --source . --platform managed --region us-central1 --allow-unauthenticated --port 8080 --max-instances 3 --min-instances 0 --timeout 300 --memory 1Gi --cpu 1

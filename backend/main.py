@@ -36,8 +36,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://zyagrolia.com",
+        "https://api.zyagrolia.com",
+        "https://records-ai-v2-969278596906.us-central1.run.app",
         "http://localhost:8000",
         "http://localhost:3000",
+        "*",  # Allow all origins for Cloud Run (can be restricted later)
     ],
     allow_credentials=True,
     allow_methods=["*"],
