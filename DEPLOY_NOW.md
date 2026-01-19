@@ -1,90 +1,116 @@
-# 🚀 Hemen Deploy Et - Adım Adım
+# Deploy to Cloud Run - Recognition Integration
 
-## ⚡ Hızlı Komut (Tek Satır)
+## ✅ Git Push Complete
+- All changes pushed to `origin/main`
+- Token secrets removed from codebase
+- Recognition integration ready for deployment
 
-PowerShell'de şu komutu çalıştırın:
+## 🚀 Cloud Run Deploy Commands
 
-```powershell
-gcloud auth login; gcloud config set project records-ai; gcloud run deploy records-ai-v2 --source . --platform managed --region europe-west1 --allow-unauthenticated --port 8080
-```
+### Option 1: Deploy from Local (Recommended)
 
-## 📝 Detaylı Adımlar
-
-### ADIM 1: Authentication (2 dakika)
-
-PowerShell'de çalıştırın:
-```powershell
-gcloud auth login
-```
-
-- Tarayıcı otomatik açılacak
-- Google hesabınızla giriş yapın (ednovitsky@novitskyarchive.com)
-- İzinleri onaylayın
-
-### ADIM 2: Projeyi Ayarlayın (5 saniye)
-
-```powershell
+```bash
+# Set project
 gcloud config set project records-ai
+
+# Deploy from source
+gcloud run deploy records-ai-v2 \
+  --source . \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --max-instances 3 \
+  --min-instances 0 \
+  --timeout 300 \
+  --memory 1Gi \
+  --cpu 1 \
+  --set-env-vars OPENAI_API_KEY="your-openai-key" \
+  --set-env-vars DISCOGS_TOKEN="your-discogs-token" \
+  --set-env-vars SECRET_KEY="your-jwt-secret" \
+  --set-env-vars DATABASE_URL="your-postgres-url"
 ```
 
-### ADIM 3: Deploy Edin (5-10 dakika)
+### Option 2: Deploy from Cloud Shell
 
-```powershell
-gcloud run deploy records-ai-v2 `
-  --source . `
-  --platform managed `
-  --region europe-west1 `
-  --allow-unauthenticated `
+```bash
+# Clone/pull latest
+cd ~/records_ai_v2
+git pull origin main
+
+# Deploy
+gcloud run deploy records-ai-v2 \
+  --source . \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --max-instances 3 \
+  --min-instances 0 \
+  --timeout 300 \
+  --memory 1Gi \
+  --cpu 1
+```
+
+### Option 3: Build and Deploy Image
+
+```bash
+# Build image
+gcloud builds submit --tag gcr.io/records-ai/records-ai-v2
+
+# Deploy
+gcloud run deploy records-ai-v2 \
+  --image gcr.io/records-ai/records-ai-v2 \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
   --port 8080
 ```
 
-Bu komut:
-- Docker image build eder
-- Cloud Run'a deploy eder
-- Service URL'i gösterir
+## 📋 Required Environment Variables
 
-### ADIM 4: Sonuçları Kontrol Edin
+Set these before or after deployment:
 
-Deployment tamamlandığında şöyle bir çıktı göreceksiniz:
-
-```
-Service URL: https://records-ai-v2-xxxxx.europe-west1.run.app
-```
-
-## ✅ Deployment Sonrası
-
-1. **Browser cache temizle:** `Ctrl + Shift + R`
-2. **Test et:**
-   - Ana Sayfa: `https://[SERVICE_URL]/ui/index.html`
-   - Upload: `https://[SERVICE_URL]/ui/upload.html`
-
-## 🔄 Alternatif: Script Kullan
-
-Eğer authentication yaptıysanız:
-
-```powershell
-.\QUICK_DEPLOY.ps1
+```bash
+gcloud run services update records-ai-v2 \
+  --region us-central1 \
+  --update-env-vars \
+    OPENAI_API_KEY="your-openai-key",\
+    DISCOGS_TOKEN="your-discogs-token",\
+    SECRET_KEY="your-jwt-secret",\
+    DATABASE_URL="postgresql://user:pass@host/dbname"
 ```
 
-## ❓ Sorun mu var?
+## ✅ Verify Deployment
 
-### "Permission denied" hatası
-→ IAM sayfasından rol ekleyin:
-https://console.cloud.google.com/iam-admin/iam?project=records-ai
+```bash
+# Get service URL
+SERVICE_URL=$(gcloud run services describe records-ai-v2 \
+  --region us-central1 \
+  --format="value(status.url)")
 
-Gerekli roller:
-- Cloud Run Admin
-- Cloud Build Editor
+echo "Service URL: $SERVICE_URL"
 
-### "Authentication failed"
-→ `gcloud auth login` tekrar çalıştırın
+# Test health
+curl $SERVICE_URL/health
 
-### "Project not found"
-→ `gcloud config set project records-ai`
+# Test recognition (requires auth token)
+curl -X POST $SERVICE_URL/api/v1/upap/upload \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@test_image.jpg" \
+  -F "email=test@example.com"
+```
 
----
+## 🎯 What's New
 
-**Özet:** Sadece `gcloud auth login` yapın, sonra deployment komutunu çalıştırın!
+- ✅ Recognition integration in upload flow
+- ✅ Real artist/album/label extraction
+- ✅ Marketplace API preparation (Phase 3 ready)
+- ✅ Architectural alignment complete
 
+## 📝 Notes
 
-
+- Large file warning: `records_ai_v2.zip` (60MB) - consider removing or using Git LFS
+- Database: Ensure PostgreSQL connection string is set
+- OpenAI API: Required for recognition to work
+- Discogs API: Required for pricing service

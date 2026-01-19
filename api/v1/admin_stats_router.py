@@ -1,13 +1,33 @@
-# backend/api/v1/admin_stats_router.py
+# api/v1/admin_stats_router.py
 # UTF-8, English only
+# LEGACY FILE - This file is deprecated. Use backend/api/v1/admin_stats_router.py instead.
 
+import logging
 from datetime import datetime
 from typing import Any, Dict
 
 from fastapi import APIRouter
-from tinydb import where
 
-from backend.db import db
+logger = logging.getLogger(__name__)
+
+# Defensive import: tinydb is optional (legacy support)
+try:
+    from tinydb import where
+    from backend.db import db
+    TINYDB_AVAILABLE = True
+except ImportError:
+    TINYDB_AVAILABLE = False
+    logger.warning("tinydb not available - admin_stats_router legacy endpoints disabled")
+    # Create stub db object
+    class TinyDBStub:
+        def table(self, name):
+            return TinyTableStub()
+    class TinyTableStub:
+        def all(self):
+            return []
+        def __len__(self):
+            return 0
+    db = TinyDBStub()
 
 router = APIRouter(
     prefix="/admin/stats",
@@ -20,16 +40,34 @@ def _count_table(table_name: str) -> int:
     Safe count of all rows in a TinyDB table.
     If the table does not exist yet, TinyDB returns an empty table.
     """
-    table = db.table(table_name)
-    return len(table.all())
+    if not TINYDB_AVAILABLE:
+        return 0
+    try:
+        table = db.table(table_name)
+        return len(table.all())
+    except Exception:
+        return 0
 
 
 def _build_auth_stats() -> Dict[str, Any]:
     """
     Aggregate simple auth statistics from TinyDB table 'auth'.
     """
-    table = db.table("auth")
-    rows = table.all()
+    if not TINYDB_AVAILABLE:
+        return {
+            "total_rows": 0,
+            "distinct_emails": 0,
+            "verified_users": 0,
+        }
+    try:
+        table = db.table("auth")
+        rows = table.all()
+    except Exception:
+        return {
+            "total_rows": 0,
+            "distinct_emails": 0,
+            "verified_users": 0,
+        }
 
     total_rows = len(rows)
     distinct_emails = len({row.get("email") for row in rows if row.get("email")})
@@ -50,8 +88,19 @@ def _build_pending_stats() -> Dict[str, Any]:
     Aggregate simple pending record statistics from TinyDB table 'pending_records'.
     Uses fields that exist in the current V1 JSON structure.
     """
-    table = db.table("pending_records")
-    rows = table.all()
+    if not TINYDB_AVAILABLE:
+        return {
+            "total_pending": 0,
+            "by_format": {},
+        }
+    try:
+        table = db.table("pending_records")
+        rows = table.all()
+    except Exception:
+        return {
+            "total_pending": 0,
+            "by_format": {},
+        }
 
     total = len(rows)
     formats: Dict[str, int] = {}
@@ -81,8 +130,23 @@ def _build_user_library_stats() -> Dict[str, Any]:
         "notes": {record_id: str}
     }
     """
-    table = db.table("user_library")
-    rows = table.all()
+    if not TINYDB_AVAILABLE:
+        return {
+            "user_rows": 0,
+            "total_records_links": 0,
+            "total_favorites": 0,
+            "total_notes": 0,
+        }
+    try:
+        table = db.table("user_library")
+        rows = table.all()
+    except Exception:
+        return {
+            "user_rows": 0,
+            "total_records_links": 0,
+            "total_favorites": 0,
+            "total_notes": 0,
+        }
 
     user_rows = len(rows)
     records_count = 0
@@ -112,8 +176,21 @@ def _build_archive_stats() -> Dict[str, Any]:
     If V1 has not started writing archive_records yet,
     this will simply return zeros.
     """
-    table = db.table("archive_records")
-    rows = table.all()
+    if not TINYDB_AVAILABLE:
+        return {
+            "total_archive_records": 0,
+            "by_label": {},
+            "by_artist": {},
+        }
+    try:
+        table = db.table("archive_records")
+        rows = table.all()
+    except Exception:
+        return {
+            "total_archive_records": 0,
+            "by_label": {},
+            "by_artist": {},
+        }
 
     total = len(rows)
     by_label: Dict[str, int] = {}

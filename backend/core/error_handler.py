@@ -12,9 +12,22 @@ import logging
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 
-from backend.core.error_reporting import error_reporter
-
 logger = logging.getLogger(__name__)
+
+# Defensive import: error_reporting is optional
+try:
+    from backend.core.error_reporting import error_reporter
+    ERROR_REPORTING_AVAILABLE = True
+except ImportError:
+    ERROR_REPORTING_AVAILABLE = False
+    logger.warning("error_reporting module not available - using fallback error handling")
+    # Create stub error_reporter
+    class ErrorReporterStub:
+        def report_exception(self, **kwargs):
+            pass
+        def report_message(self, **kwargs):
+            pass
+    error_reporter = ErrorReporterStub()
 
 
 def register_exception_handlers(app):
