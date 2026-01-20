@@ -831,6 +831,8 @@ async function uploadRecord() {
 
         const data = await response.json();
         
+        console.log('[UPLOAD] Backend response:', data);
+        
         // Handle multiple records or single record
         let results = [];
         if (data.type === 'multiple_records' && data.records) {
@@ -848,6 +850,7 @@ async function uploadRecord() {
             records: results
         };
         
+        console.log('[UPLOAD] Storing preview data:', previewData);
         setStorage('preview_data', JSON.stringify(previewData));
 
         // Redirect to preview page for quick review

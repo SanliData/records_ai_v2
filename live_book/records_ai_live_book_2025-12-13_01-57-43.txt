@@ -1,0 +1,17 @@
+=== UPAP VALIDATION REPORT ===
+
+>> CONTRACT VALIDATION
+  - auth: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - upload: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - process: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - archive: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - publish: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+
+>> RUNTIME VALIDATION
+  - auth: 40/100 | error: KeyError('email')
+  - upload: 40/100 | error: KeyError('file_bytes')
+  - process: 40/100 | error: KeyError('file_path')
+  - archive: 40/100 | error: KeyError('process_result')
+  - publish: 40/100 | error: KeyError('archive_record')
+
+>> OVERALL SCORE: 70/100

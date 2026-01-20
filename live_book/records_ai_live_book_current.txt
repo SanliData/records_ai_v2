@@ -1,0 +1,212 @@
+=== UPAP VALIDATION REPORT ===
+Generated: 2026-01-05 (Latest Update)
+
+>> CONTRACT VALIDATION
+  - auth: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - upload: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - process: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - archive: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - publish: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+
+>> RUNTIME VALIDATION
+  - auth: 100/100 | notes: ['Runtime validation passed']
+  - upload: 100/100 | notes: ['Runtime validation passed']
+  - process: 100/100 | notes: ['Runtime validation passed']
+  - archive: 100/100 | notes: ['Runtime validation passed']
+  - publish: 100/100 | notes: ['Runtime validation passed']
+
+>> OVERALL SCORE: 100/100
+
+=== FRONTEND STATUS ===
+
+Pages:
+  - index.html: ✅ Home page with explore-first design
+  - upload.html: ✅ Anonymous upload, UPAP compliant endpoint, quick preview redirect
+  - preview.html: ✅ NEW - Preview/confirmation page with label zoom
+  - results.html: ✅ Results preview page
+  - archive-save.html: ✅ Archive save (auth required)
+  - login.html: ✅ Google OAuth only, mobile responsive
+  - library.html: ✅ Personal archive viewer with marketplace integration
+
+UPAP Compliance:
+  - Upload endpoint: /upap/process/process/preview (Upload → Process)
+  - Archive endpoint: /upap/archive/add (Archive stage)
+  - Publish endpoint: /upap/publish (Publish stage)
+  - Pipeline order: Upload → Process → Archive → Publish (immutable)
+
+Authentication:
+  - Google OAuth: Required for all authenticated features
+  - Admin system: ednovitsky@archive.com, isanli058@gmail.com
+  - Auto user creation: Valid Google account automatically accepted (no approval needed)
+
+=== NEW FEATURES (Latest Update) ===
+
+1. ✅ Admin System
+   - Admin service: backend/services/admin_service.py
+   - Admin router: backend/api/v1/admin_router.py
+   - Admin users: ednovitsky@archive.com, isanli058@gmail.com
+   - Admin-only endpoints for moderation and management
+
+2. ✅ Marketplace Integration
+   - Marketplace service: backend/services/marketplace_service.py
+   - Marketplace router: backend/api/v1/marketplace_router.py
+   - Multi-platform listings: Discogs, eBay, Etsy, Amazon
+   - Auto-sync: When one platform marks as sold, others close automatically
+   - Quick sell: One-click listing creation on all platforms
+
+3. ✅ Multi-Record Detection (Sherlock Holmes Mode)
+   - Detection service: backend/services/multi_record_detection_service.py
+   - AI Vision detection: Finds multiple records in single image
+   - Partial record detection: Finds records even if partially visible
+   - Auto crop: Each detected record is cropped and processed separately
+   - Computer Vision fallback: Hough Circles for circular record detection
+
+4. ✅ Preview/Confirmation Page
+   - Preview page: frontend/preview.html
+   - Quick processing: Image processed immediately after upload
+   - Label zoom: Click-to-zoom for detailed label inspection
+   - Metadata display: Artist, album, label, year, catalog number
+   - Archive confirmation: One-click archive addition
+
+5. ✅ Lyrics and Sheet Music Integration
+   - Lyrics service: backend/services/lyrics_service.py
+   - Sheet music service: backend/services/sheet_music_service.py
+   - Auto-fetch: Lyrics and sheet music links fetched on archive addition
+   - Multiple sources: Genius, Lyrics.com, Lyricsify, IMSLP, MuseScore, Free-scores.com
+
+6. ✅ Mobile Responsiveness
+   - All pages: Mobile-responsive design
+   - Hamburger menu: Mobile navigation menu
+   - Adaptive layouts: Works on all screen sizes
+
+=== UPAP PIPELINE STATUS ===
+
+Core Stages (Required):
+  - Upload: ✅ Active
+  - Process: ✅ Active (with multi-record detection)
+  - Archive: ✅ Active (Authentication required, with lyrics/sheet music)
+  - Publish: ✅ Active (Requires Archive)
+
+Optional Stages (ENV gated):
+  - OCR: ⚠️ Disabled (set UPAP_ENABLE_OCR=true to enable)
+  - AI: ⚠️ Disabled (set UPAP_ENABLE_AI=true to enable)
+
+Stage Implementation:
+  - UploadStage: backend/services/upap/upload/upload_stage.py
+  - ProcessStage: backend/services/upap/process/process_stage.py
+  - ArchiveStage: backend/services/upap/archive/archive_stage.py
+  - PublishStage: backend/services/upap/publish/publish_stage.py
+  - UPAPEngine: backend/services/upap/engine/upap_engine.py
+
+=== API ENDPOINTS ===
+
+UPAP Endpoints:
+  - POST /upap/upload - Upload stage (email required)
+  - POST /upap/process/process/preview - Upload + Process (anonymous, multi-record detection)
+  - POST /upap/archive/add - Archive stage (auth required, with lyrics/sheet music)
+  - GET /upap/archive/list - List user archive (auth required)
+  - POST /upap/publish - Publish stage (requires archive)
+
+Authentication:
+  - POST /auth/login/google - Google OAuth login
+  - GET /auth/login/request - DEPRECATED (use Google OAuth)
+  - POST /auth/login/verify - DEPRECATED (use Google OAuth)
+
+Marketplace:
+  - POST /marketplace/quick-sell - One-click listing creation
+  - GET /marketplace/listings/{archive_id} - Get listings for record
+  - PUT /marketplace/listing/{listing_id}/status - Update listing status (auto-sync)
+  - POST /marketplace/sync/{archive_id} - Sync listings across platforms
+
+Admin:
+  - GET /admin/pending - List pending records (admin only)
+  - POST /admin/approve/{archive_id} - Approve record (admin only)
+  - POST /admin/reject/{archive_id} - Reject record (admin only)
+  - GET /admin/admins - List admins (admin only)
+  - POST /admin/admins/{email} - Add admin (admin only)
+  - DELETE /admin/admins/{email} - Remove admin (admin only)
+
+Vinyl Pricing:
+  - GET /vinyl/pricing/market-prices - Get Discogs market prices
+
+Health:
+  - GET /health - Service health check
+
+=== BACKEND SERVICES ===
+
+Core Services:
+  - admin_service.py - Admin user management
+  - marketplace_service.py - Multi-platform listing management
+  - multi_record_detection_service.py - AI-powered multi-record detection
+  - lyrics_service.py - Lyrics link fetching
+  - sheet_music_service.py - Sheet music link fetching
+  - vinyl_pricing_service.py - Discogs pricing integration
+  - auth_service.py - Google OAuth authentication
+  - user_service.py - User management with admin support
+  - global_library_service.py - Global archive with deduplication
+  - user_library_service.py - User-specific archive
+
+=== DEPLOYMENT STATUS ===
+
+Production:
+  - Domain: zyagrolia.com
+  - API: api.zyagrolia.com
+  - Platform: Google Cloud Run
+  - Frontend: /ui/ path via FastAPI static files
+  - Root redirect: /ui/index.html
+
+Local Development:
+  - Base URL: http://127.0.0.1:8000
+  - Frontend: http://127.0.0.1:8000/ui/
+  - API Docs: http://127.0.0.1:8000/docs
+
+=== OPERATIONAL READINESS ===
+
+Golden Level Target : 8
+UPAP Overall Score  : 100 / 100
+Deploy Gate         : OPEN
+UPAP Status         : HEALTHY
+Generated At        : 2026-01-05 (Latest Update)
+Reference           : Main Book / Section 8
+
+=== COMPLIANCE STATUS ===
+
+UPAP Pipeline Compliance:
+  - ✅ Pipeline order enforced (Upload → Process → Archive → Publish)
+  - ✅ Archive stage authentication lock active
+  - ✅ Publish stage archive validation active
+  - ✅ Preview mode properly isolated (Upload + Process only)
+  - ✅ All frontend pages use UPAP-compliant endpoints
+  - ✅ Multi-record detection integrated into process stage
+  - ✅ Quick preview/confirmation workflow implemented
+
+Authentication Model:
+  - ✅ Google OAuth required for authenticated features
+  - ✅ Admin system with privilege management
+  - ✅ Auto user creation (no approval needed for valid Google accounts)
+  - ✅ Admin endpoints protected with admin middleware
+
+=== NOTES ===
+
+1. UPAP pipeline is fully functional and compliant
+2. Multi-record detection (Sherlock Holmes mode) active in process stage
+3. Preview/confirmation page provides quick review before archive
+4. Marketplace integration enables one-click multi-platform selling
+5. Admin system allows moderation and management
+6. Lyrics and sheet music automatically fetched on archive addition
+7. Mobile-responsive design across all pages
+8. Ready for production deployment
+
+=== FUTURE CONSIDERATIONS ===
+
+UPAP Service Separation:
+  - Frontend will use environment variable for UPAP service URL
+  - Backend will include UPAP service client wrapper
+  - Service discovery and health checks needed
+  - Authentication token forwarding required
+
+Feature Enhancements:
+  - Real-time marketplace sync (polling or webhooks)
+  - Enhanced multi-record detection accuracy
+  - Advanced label recognition and OCR improvements
+  - Batch upload processing optimization

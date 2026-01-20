@@ -109,6 +109,22 @@ class UserService:
             return self.db.query(User).filter(User.id == user_id).first()
         except Exception:
             return None
+    
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        """
+        PUBLIC METHOD - Get user by email.
+        
+        Args:
+            email: User email address (will be normalized to lowercase)
+            
+        Returns:
+            User object if found, None otherwise
+        """
+        try:
+            normalized_email = email.lower().strip()
+            return self.db.query(User).filter(User.email == normalized_email).first()
+        except Exception:
+            return None
 
 
 def get_user_service(db: Session) -> UserService:

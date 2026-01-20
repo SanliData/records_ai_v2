@@ -8,6 +8,7 @@ import json
 import uuid
 import logging
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from backend.db import get_db
 from backend.services.user_service import get_user_service
 from backend.services.user_library_service import user_library_service
@@ -17,6 +18,7 @@ from backend.api.v1.auth_middleware import get_current_user
 from backend.services.vinyl_pricing_service import vinyl_pricing_service
 from backend.services.lyrics_service import lyrics_service
 from backend.services.sheet_music_service import sheet_music_service
+from backend.api.v1.schemas.archive_schema import ArchiveRequestSchema
 
 logger = logging.getLogger(__name__)
 
@@ -43,34 +45,111 @@ async def add_to_archive(
     Accepts both JSON body (preferred) and Form data (legacy support).
     """
     try:
-        # Try to parse as JSON first (preferred)
+        # P2: Input Validation - Parse and validate request
         content_type = request.headers.get("content-type", "")
+        validated_data = None
+        record_info = {}  # Initialize to empty dict to avoid NameError
+        
         if "application/json" in content_type:
             body = await request.json()
-            record_id = body.get("record_id") or body.get("preview_id")
-            email = body.get("email") or user.email
-            record_info = {k: v for k, v in body.items() if k not in ["record_id", "preview_id", "email"]}
+            # Validate using Pydantic schema
+            try:
+                validated_data = ArchiveRequestSchema(**body)
+            except Exception as validation_error:
+                # Pydantic validation error - return 422 with details
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "error": "Validation failed",
+                        "detail": str(validation_error),
+                        "errors": validation_error.errors() if hasattr(validation_error, "errors") else []
+                    }
+                )
+            
+            record_id = validated_data.record_id or validated_data.preview_id
+            email = validated_data.email or user.email
+            record_info = validated_data.dict(exclude_none=True, exclude={"record_id", "preview_id", "email", "record_data"})
+            
             # Merge nested record_data if present
-            if "record_data" in body and isinstance(body["record_data"], dict):
-                record_info.update(body["record_data"])
+            if validated_data.record_data and isinstance(validated_data.record_data, dict):
+                record_info.update(validated_data.record_data)
         else:
-            # Fallback to Form data (legacy support)
+            # Fallback to Form data (legacy support) - validate after parsing
             form = await request.form()
-            record_id = form.get("record_id") or form.get("preview_id")
-            email = form.get("email") or user.email
-            record_data_str = form.get("record_data")
-            record_info = {}
+            form_dict = dict(form)
+            record_id = form_dict.get("record_id") or form_dict.get("preview_id")
+            email = form_dict.get("email") or user.email
+            record_data_str = form_dict.get("record_data")
+            
+            # Build dict for validation
+            form_data = {
+                "record_id": record_id or form_dict.get("preview_id"),
+                "email": email,
+                **{k: v for k, v in form_dict.items() if k not in ["record_id", "preview_id", "email", "record_data"]}
+            }
+            
             if record_data_str:
                 try:
-                    record_info = json.loads(record_data_str) if isinstance(record_data_str, str) else record_data_str
+                    record_data_dict = json.loads(record_data_str) if isinstance(record_data_str, str) else record_data_str
+                    form_data.update(record_data_dict)
                 except:
                     pass
+            
+            # Validate Form data
+            try:
+                validated_data = ArchiveRequestSchema(**form_data)
+                record_info = validated_data.dict(exclude_none=True, exclude={"record_id", "preview_id", "email", "record_data"})
+                if validated_data.record_data:
+                    record_info.update(validated_data.record_data)
+            except Exception as validation_error:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "error": "Validation failed",
+                        "detail": str(validation_error)
+                    }
+                )
         
         if not record_id:
             raise HTTPException(status_code=400, detail="record_id or preview_id is required")
         
         if not email:
             email = user.email
+        
+        # P0-3: IDEMPOTENCY CHECK - MUST be done FIRST before any expensive operations
+        # Check if record already exists in user library by record_id
+        # CRITICAL: Check ALL records for matching record_id + user_id to handle concurrent requests
+        all_records = list(user_library_service._records.values())
+        for rec in all_records:
+            # Check by record_id AND user_id to ensure user-specific idempotency
+            if (rec.get("record_id") == record_id or rec.get("archive_id") == record_id) and \
+               (str(rec.get("user_id")) == str(user.id) or rec.get("user_id_str") == str(user.id) or rec.get("user_email") == user.email):
+                logger.info(f"[ARCHIVE] Record {record_id} already exists for user {user.id}. Returning existing record (idempotent operation).")
+                rec["idempotent"] = True
+                return {
+                    "status": "ok",
+                    "message": "Record already exists (idempotent)",
+                    "record_id": record_id,
+                    "idempotent": True,
+                    "library_record": rec
+                }
+        
+        # Also check by archive_id if record_id was used as archive_id
+        existing_by_archive_id = user_library_service.get_record(record_id)
+        if existing_by_archive_id:
+            # Verify it belongs to this user
+            if (str(existing_by_archive_id.get("user_id")) == str(user.id) or 
+                existing_by_archive_id.get("user_id_str") == str(user.id) or
+                existing_by_archive_id.get("user_email") == user.email):
+                logger.info(f"[ARCHIVE] Record {record_id} already exists in user library. Returning existing record (idempotent operation).")
+                existing_by_archive_id["idempotent"] = True
+                return {
+                    "status": "ok",
+                    "message": "Record already exists (idempotent)",
+                    "record_id": record_id,
+                    "idempotent": True,
+                    "library_record": existing_by_archive_id
+                }
         
         # UPAP V2 Compliance: Verify PreviewRecord state (optional check)
         # Allow archiving even if is_preview is not explicitly set
@@ -103,20 +182,79 @@ async def add_to_archive(
         }
         
         # Get file paths (handle multiple possible field names)
-        file_path = record_info.get("file_path") or record_info.get("canonical_image_path") or record_info.get("thumbnail_url")
+        # Prefer standard JPEG path if available, otherwise use original path
+        standard_jpeg_path = record_info.get("standard_jpeg_path") or record_info.get("archive_image_path")
+        file_path = standard_jpeg_path or record_info.get("file_path") or record_info.get("canonical_image_path") or record_info.get("thumbnail_url")
         thumbnail_url = record_info.get("thumbnail_url") or record_info.get("file_path") or record_info.get("canonical_image_path")
+        canonical_image_path = file_path  # Default to file_path
+        
+        # If standard JPEG doesn't exist, convert original image to standard JPEG
+        if not standard_jpeg_path and file_path:
+            try:
+                from pathlib import Path
+                from backend.services.vision_engine import vision_engine
+                
+                # Resolve file path (remove leading slash if present)
+                original_path = file_path.lstrip("/")
+                original_file = Path(original_path)
+                
+                if original_file.exists():
+                    # Create archive directory for standard JPEG storage
+                    archive_dir = Path("storage") / "archive" / str(user.id)
+                    archive_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Convert to standard JPEG: {record_id}.jpg
+                    standard_jpeg = archive_dir / f"{record_id}.jpg"
+                    
+                    # Only convert if standard JPEG doesn't exist
+                    if not standard_jpeg.exists():
+                        converted_path = vision_engine.save_as_jpeg(
+                            file_path=original_file,
+                            target_dir=archive_dir
+                        )
+                        
+                        # Rename to standard format: {record_id}.jpg
+                        if Path(converted_path).exists() and converted_path != str(standard_jpeg):
+                            Path(converted_path).rename(standard_jpeg)
+                            converted_path = str(standard_jpeg)
+                        
+                        # Update file paths to use standard JPEG
+                        file_path = f"/{str(standard_jpeg).replace('\\', '/')}"
+                        if not file_path.startswith("/"):
+                            file_path = f"/{file_path}"
+                        thumbnail_url = file_path
+                        canonical_image_path = file_path
+                        standard_jpeg_path = file_path
+                        
+                        logger.info(f"[ARCHIVE] Image converted to standard JPEG: {file_path}")
+                    else:
+                        # Use existing standard JPEG
+                        file_path = f"/{str(standard_jpeg).replace('\\', '/')}"
+                        if not file_path.startswith("/"):
+                            file_path = f"/{file_path}"
+                        thumbnail_url = file_path
+                        canonical_image_path = file_path
+                        standard_jpeg_path = file_path
+                        logger.info(f"[ARCHIVE] Using existing standard JPEG: {file_path}")
+            except Exception as conv_error:
+                # If conversion fails, use original path (fallback)
+                logger.warning(f"[ARCHIVE] JPEG conversion failed: {conv_error}, using original file")
+                # canonical_image_path already set to file_path
         
         # Additional fields for global archive (pricing, files, etc.)
+        # canonical_image_path is set above during conversion (defaults to file_path)
         additional_fields = {
             "file_path": file_path,
             "thumbnail_url": thumbnail_url,
-            "canonical_image_path": file_path,
+            "canonical_image_path": canonical_image_path,
+            "standard_jpeg_path": standard_jpeg_path if standard_jpeg_path else file_path,  # Standard JPEG path for archive
+            "archive_image_path": standard_jpeg_path if standard_jpeg_path else file_path,  # Alias for standard JPEG path
             "confidence": record_info.get("confidence"),
             "ocr_text": record_info.get("ocr_text"),
             "matrix_info": record_info.get("matrix_info"),
             "side": record_info.get("side"),
             "source": "user_upload",
-            **{k: v for k, v in record_info.items() if k not in ["file_path", "thumbnail_url", "canonical_image_path"]}
+            **{k: v for k, v in record_info.items() if k not in ["file_path", "thumbnail_url", "canonical_image_path", "standard_jpeg_path", "archive_image_path", "confidence", "ocr_text", "matrix_info", "side"]}
         }
         
         # Add to global archive (or get existing if fingerprint matches)
@@ -150,7 +288,9 @@ async def add_to_archive(
             "country": record_info.get("country"),
             "file_path": file_path,
             "thumbnail_url": thumbnail_url,
-            "canonical_image_path": file_path,
+            "canonical_image_path": canonical_image_path if 'canonical_image_path' in locals() else file_path,
+            "standard_jpeg_path": file_path,  # Standard JPEG path for archive
+            "archive_image_path": file_path,  # Alias for standard JPEG path
             "confidence": record_info.get("confidence"),
             "ocr_text": record_info.get("ocr_text"),
             "matrix_info": record_info.get("matrix_info"),
@@ -261,17 +401,22 @@ async def add_to_archive(
                 }
         
         # STEP 5: Add to user library (reference to global archive)
-        user_library_service.add_record(archive_record)
+        # P0-3: Idempotency - add_record will check for existing record
+        library_record = user_library_service.add_record(archive_record)
+        
+        # Check if this was an idempotent operation (record already existed)
+        is_idempotent = library_record.get("idempotent", False)
         
         return {
             "status": "ok",
-            "message": "Record added to archive",
+            "message": "Record added to archive" if not is_idempotent else "Record already exists (idempotent)",
+            "idempotent": is_idempotent,
             "record_id": record_id,
             "global_id": global_id,
             "fingerprint": fingerprint,
             "archive": archive_result,
             "global_record": global_record,
-            "library_record": archive_record
+            "library_record": library_record
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add to archive: {str(e)}")

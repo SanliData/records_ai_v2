@@ -1,0 +1,166 @@
+=== UPAP VALIDATION REPORT ===
+Generated: 2026-01-05 13:36:53
+
+>> CONTRACT VALIDATION
+  - auth: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - upload: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - process: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - archive: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+  - publish: 100/100 | notes: ['Contract fully compatible with current gold standard.']
+
+>> RUNTIME VALIDATION
+  - auth: 100/100 | notes: ['Runtime validation passed']
+  - upload: 100/100 | notes: ['Runtime validation passed']
+  - process: 100/100 | notes: ['Runtime validation passed']
+  - archive: 100/100 | notes: ['Runtime validation passed']
+  - publish: 100/100 | notes: ['Runtime validation passed']
+
+>> OVERALL SCORE: 100/100
+
+=== FRONTEND STATUS ===
+
+Pages:
+  - index.html: ✅ NEW - Home page with explore-first design
+  - upload.html: ✅ UPDATED - Anonymous upload, UPAP compliant endpoint
+  - results.html: ✅ NEW - Results preview page
+  - archive-save.html: ✅ NEW - Archive save (auth required)
+  - login.html: ✅ UPDATED - Navigation and footer added
+  - library.html: ✅ EXISTS - Personal archive viewer
+
+UPAP Compliance:
+  - Upload endpoint: /upap/process/process/preview (Upload → Process)
+  - Archive endpoint: /upap/archive/add (Archive stage)
+  - Publish endpoint: /upap/publish (Publish stage)
+  - Pipeline order: Upload → Process → Archive → Publish (immutable)
+
+Authentication:
+  - Anonymous: Upload + Process (preview mode) ✅
+  - Authenticated: Archive + Publish access ✅
+
+=== UPAP PIPELINE STATUS ===
+
+Core Stages (Required):
+  - Upload: ✅ Active
+  - Process: ✅ Active
+  - Archive: ✅ Active (Authentication required)
+  - Publish: ✅ Active (Requires Archive)
+
+Optional Stages (ENV gated):
+  - OCR: ⚠️ Disabled (set UPAP_ENABLE_OCR=true to enable)
+  - AI: ⚠️ Disabled (set UPAP_ENABLE_AI=true to enable)
+
+Stage Implementation:
+  - UploadStage: backend/services/upap/upload/upload_stage.py
+  - ProcessStage: backend/services/upap/process/process_stage.py
+  - ArchiveStage: backend/services/upap/archive/archive_stage.py
+  - PublishStage: backend/services/upap/publish/publish_stage.py
+  - UPAPEngine: backend/services/upap/engine/upap_engine.py
+
+=== DEPLOYMENT STATUS ===
+
+Production:
+  - Domain: zyagrolia.com
+  - API: api.zyagrolia.com
+  - Platform: Google Cloud Run
+  - Frontend: /ui/ path via FastAPI static files
+  - Root redirect: /ui/index.html
+
+Local Development:
+  - Base URL: http://127.0.0.1:8000
+  - Frontend: http://127.0.0.1:8000/ui/
+  - API Docs: http://127.0.0.1:8000/docs
+
+=== RECENT CHANGES (2025-12-13) ===
+
+Frontend Refactoring:
+  1. ✅ Created index.html - Home page with UPAP pipeline explanation
+  2. ✅ Updated upload.html - Removed email requirement, anonymous access
+  3. ✅ Created results.html - Analysis results preview
+  4. ✅ Created archive-save.html - Archive save with authentication
+  5. ✅ Updated login.html - Added navigation and footer
+  6. ✅ All pages now use UPAP-compliant endpoints
+  7. ✅ Added navigation consistency across all pages
+  8. ✅ Added GPT ownership footer to all pages
+
+Backend:
+  - ✅ main.py: Root redirect updated to /ui/index.html
+
+Documentation:
+  - ✅ UPAP_COMPATIBILITY_NOTES.md - UPAP compliance documentation
+  - ✅ GITHUB_SYNC_NOTES.md - GitHub synchronization notes
+  - ✅ DEPLOYMENT_STATUS.md - Deployment status and notes
+  - ✅ README.md - Updated with frontend information
+  - ✅ DDR-UPAP-001__Archive_Stage_Lock.md - Updated with current status
+  - ✅ Frontend_Refactoring_2025-12-13.md - New documentation
+
+=== API ENDPOINTS ===
+
+UPAP Endpoints:
+  - POST /upap/upload - Upload stage (email required)
+  - POST /upap/process/process/preview - Upload + Process (anonymous)
+  - POST /upap/archive/add - Archive stage (auth required)
+  - GET /upap/archive/list - List user archive (auth required)
+  - POST /upap/publish - Publish stage (requires archive)
+
+Authentication:
+  - POST /auth/login/request - Request login token
+  - POST /auth/login/verify - Verify login token
+
+Health:
+  - GET /health - Service health check
+
+=== FILE STRUCTURE ===
+
+Key Files:
+  - backend/main.py - FastAPI application entry point
+  - backend/services/upap/engine/upap_engine.py - UPAP pipeline engine
+  - frontend/index.html - Home page
+  - frontend/upload.html - Upload page
+  - frontend/results.html - Results page
+  - frontend/archive-save.html - Archive save page
+  - scripts/build_live_book.py - Live book generator
+
+=== OPERATIONAL READINESS ===
+
+Golden Level Target : 8
+UPAP Overall Score  : 100 / 100
+Deploy Gate         : OPEN
+UPAP Status         : HEALTHY
+Generated At        : 2026-01-05T13:36:53Z
+Reference           : Main Book / Section 8
+
+=== COMPLIANCE STATUS ===
+
+UPAP Pipeline Compliance:
+  - ✅ Pipeline order enforced (Upload → Process → Archive → Publish)
+  - ✅ Archive stage authentication lock active
+  - ✅ Publish stage archive validation active
+  - ✅ Preview mode properly isolated (Upload + Process only)
+  - ✅ All frontend pages use UPAP-compliant endpoints
+
+Authentication Model:
+  - ✅ Anonymous access for exploration
+  - ✅ Authentication gate at Archive stage
+  - ✅ Soft prompts (no forced redirects)
+  - ✅ Clear messaging about authentication requirements
+
+=== NOTES ===
+
+1. UPAP pipeline is fully functional and compliant
+2. Frontend refactoring completed with anonymous access support
+3. All endpoints are UPAP-compliant
+4. Authentication is optional for exploration, required for archive/publish
+5. Ready for production deployment
+6. UPAP will be separated into independent service in future
+7. Migration path documented for UPAP service separation
+
+=== FUTURE CONSIDERATIONS ===
+
+UPAP Service Separation:
+  - Frontend will use environment variable for UPAP service URL
+  - Backend will include UPAP service client wrapper
+  - Service discovery and health checks needed
+  - Authentication token forwarding required
+
+
+

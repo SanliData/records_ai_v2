@@ -406,6 +406,7 @@
 
                 if (storedData) {
                     previewData = JSON.parse(storedData);
+                    console.log('[PREVIEW] Loaded from localStorage:', previewData);
                 } else if (previewId) {
                     // Fetch from API if needed
                     const token = localStorage.getItem('auth_token');
@@ -415,10 +416,12 @@
                         }
                     });
                     previewData = await response.json();
+                    console.log('[PREVIEW] Loaded from API:', previewData);
                 } else {
                     throw new Error('No preview data available');
                 }
 
+                console.log('[PREVIEW] Full preview data:', JSON.stringify(previewData, null, 2));
                 currentPreviewData = previewData;
 
                 // Check if multiple records
@@ -442,20 +445,48 @@
         }
 
         function displayRecord(record) {
-            // Set images
-            const imageUrl = record.thumbnail_url || record.file_path || record.canonical_image_path;
+            // DEBUG: Log received data
+            console.log('[PREVIEW] displayRecord called with:', record);
+            
+            // Handle nested record structure - check both top-level and nested
+            const recordData = record.record || record;
+            
+            // Set images - try multiple possible field names
+            const imageUrl = record.full_image_url || record.label_image_url || record.thumbnail_url || record.file_path || record.canonical_image_path || (recordData && recordData.file_path);
+            
+            console.log('[PREVIEW] Image URL:', imageUrl);
+            
             if (imageUrl) {
-                document.getElementById('recordImage').src = imageUrl;
-                document.getElementById('labelImage').src = imageUrl;
+                // Make absolute URL if relative
+                const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : 
+                    (imageUrl.startsWith('/') ? window.location.origin + imageUrl : window.location.origin + '/' + imageUrl);
+                
+                console.log('[PREVIEW] Full image URL:', fullImageUrl);
+                
+                document.getElementById('recordImage').src = fullImageUrl;
+                document.getElementById('labelImage').src = fullImageUrl;
+            } else {
+                console.warn('[PREVIEW] No image URL found in record');
             }
 
-            // Set metadata
-            document.getElementById('artist').textContent = record.artist || '-';
-            document.getElementById('album').textContent = record.album || record.title || '-';
-            document.getElementById('label').textContent = record.label || '-';
-            document.getElementById('year').textContent = record.year || '-';
-            document.getElementById('catalogNumber').textContent = record.catalog_number || '-';
-            document.getElementById('format').textContent = record.format || 'LP';
+            // Set metadata - try both top-level and nested record
+            const artist = record.artist || (recordData && recordData.artist);
+            const album = record.album || record.title || (recordData && (recordData.album || recordData.title));
+            const label = record.label || (recordData && recordData.label);
+            const year = record.year || (recordData && recordData.year);
+            const catalogNumber = record.catalog_number || (recordData && recordData.catalog_number);
+            const format = record.format || (recordData && recordData.format) || 'LP';
+            
+            console.log('[PREVIEW] Metadata:', { artist, album, label, year, catalogNumber, format });
+            
+            // P2: XSS Safety - Use textContent (not innerHTML) to prevent XSS
+            // textContent automatically escapes HTML and prevents script injection
+            document.getElementById('artist').textContent = artist || '-';
+            document.getElementById('album').textContent = album || '-';
+            document.getElementById('label').textContent = label || '-';
+            document.getElementById('year').textContent = year || '-';
+            document.getElementById('catalogNumber').textContent = catalogNumber || '-';
+            document.getElementById('format').textContent = format;
 
             // Add empty class to empty fields
             ['artist', 'album', 'label', 'year', 'catalogNumber'].forEach(id => {
