@@ -44,6 +44,11 @@ Thumbs.db
 .admin_token.txt
 .discogs_token.txt
 *.secret
+sa-key.json
+records-ai-runtime-key.json
+*.db
+*.sqlite
+*.sqlite3
 
 # Test outputs
 final_kill_test_report.json
