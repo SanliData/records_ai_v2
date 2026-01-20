@@ -321,7 +321,7 @@ async def add_to_archive(
         artist = record_info.get("artist")
         album = record_info.get("album")
         
-        if artist and album:
+        if artist and album and vinyl_pricing_service:
             try:
                 # Fetch market prices automatically
                 market_prices = vinyl_pricing_service.get_market_prices(
