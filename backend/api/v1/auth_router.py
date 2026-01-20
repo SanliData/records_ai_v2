@@ -6,6 +6,7 @@ from typing import Optional
 from backend.db import get_db
 from backend.services.auth_service import get_auth_service
 from backend.services.user_service import get_user_service
+from backend.api.v1.auth_middleware import get_current_user
 from backend.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -101,3 +102,32 @@ def request_login(email: str = Form(...), db: Session = Depends(get_db)):
 @router.post("/login/verify")
 def verify_login(token: str = Form(...), db: Session = Depends(get_db)):
     raise HTTPException(status_code=410, detail="DEPRECATED: Use /auth/login or /auth/login/google instead")
+
+
+@router.get("/whoami")
+async def whoami(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get current authenticated user information.
+    
+    Returns user details for verification and testing.
+    Requires valid JWT token.
+    
+    Returns:
+        {
+            "status": "ok",
+            "user_id": str,
+            "email": str,
+            "is_admin": bool,
+            "is_active": bool
+        }
+    """
+    return {
+        "status": "ok",
+        "user_id": str(current_user.id),
+        "email": current_user.email,
+        "is_admin": current_user.is_admin,
+        "is_active": current_user.is_active
+    }
