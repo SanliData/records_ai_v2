@@ -1,6 +1,6 @@
 #!/bin/bash
-# Final Production Deploy Script
-# Run in Google Cloud Shell
+# Final Deployment Script - Records AI V2
+# Run this in Google Cloud Shell or local terminal with gcloud CLI
 
 set -e
 
@@ -9,22 +9,50 @@ SERVICE_NAME="records-ai-v2"
 REGION="us-central1"
 
 echo "========================================"
-echo "Records AI V2 - Production Deploy"
+echo "Records AI V2 - Final Deployment"
 echo "========================================"
 echo ""
+echo "Project: $PROJECT_ID"
+echo "Service: $SERVICE_NAME"
+echo "Region: $REGION"
+echo ""
 
-# Step 1: Set project
-echo "[1/4] Setting GCP project..."
+# Step 1: Authentication
+echo "[1/5] Checking authentication..."
+ACTIVE_ACCOUNT=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>&1 || echo "")
+
+if [ -z "$ACTIVE_ACCOUNT" ]; then
+    echo "⚠️  No active account found."
+    echo "Running gcloud auth login..."
+    gcloud auth login --no-launch-browser 2>&1 || gcloud auth login
+    ACTIVE_ACCOUNT=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>&1)
+fi
+
+if [ -z "$ACTIVE_ACCOUNT" ]; then
+    echo "❌ Authentication failed!"
+    exit 1
+fi
+
+echo "✅ Authenticated as: $ACTIVE_ACCOUNT"
+echo ""
+
+# Step 2: Set project
+echo "[2/5] Setting GCP project..."
 gcloud config set project $PROJECT_ID
-
-# Step 2: Verify authentication
+echo "✅ Project set"
 echo ""
-echo "[2/4] Checking authentication..."
-gcloud auth list --filter=status:ACTIVE --format="value(account)"
 
-# Step 3: Deploy from source
+# Step 3: Verify project access
+echo "[3/5] Verifying project access..."
+if ! gcloud projects describe $PROJECT_ID > /dev/null 2>&1; then
+    echo "❌ Cannot access project: $PROJECT_ID"
+    exit 1
+fi
+echo "✅ Project access verified"
 echo ""
-echo "[3/4] Deploying to Cloud Run..."
+
+# Step 4: Deploy
+echo "[4/5] Deploying to Cloud Run..."
 echo "This may take 5-10 minutes..."
 echo ""
 
@@ -41,9 +69,9 @@ gcloud run deploy $SERVICE_NAME \
     --cpu 1 \
     --set-env-vars GOOGLE_ENTRYPOINT="uvicorn backend.main:app --host 0.0.0.0 --port \$PORT"
 
-# Step 4: Get service URL
+# Step 5: Get service URL
 echo ""
-echo "[4/4] Getting service URL..."
+echo "[5/5] Getting service URL..."
 SERVICE_URL=$(gcloud run services describe $SERVICE_NAME \
     --region $REGION \
     --format="value(status.url)")
@@ -57,10 +85,16 @@ echo "Service URL: $SERVICE_URL"
 echo ""
 echo "Test Endpoints:"
 echo "  Health:    $SERVICE_URL/health"
-echo "  Whoami:    $SERVICE_URL/auth/whoami"
-echo "  Files:     $SERVICE_URL/files/archive/{user_id}/{record_id}.jpg"
+echo "  OpenAI:    $SERVICE_URL/openai/analyze"
+echo "  Channels:  $SERVICE_URL/channels/publish"
+echo "  Commerce:  $SERVICE_URL/commerce/analytics/dashboard"
+echo "  Shipping:  $SERVICE_URL/shipping/analytics/dashboard"
 echo ""
-echo "Static Files:"
-echo "  - /files mount active (DEV mode)"
-echo "  - Frontend can use: /files/archive/{user_id}/{record_id}.jpg"
+echo "Next Steps:"
+echo "  1. Set environment variables (if needed):"
+echo "     gcloud run services update $SERVICE_NAME --region $REGION \\"
+echo "       --set-env-vars OPENAI_API_KEY=your_key,DISCOGS_TOKEN=your_token"
+echo ""
+echo "  2. Test health endpoint:"
+echo "     curl $SERVICE_URL/health"
 echo ""
