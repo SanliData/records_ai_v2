@@ -1,0 +1,46 @@
+# Manual Cloud Run Deployment Commands
+# Copy and paste these commands in Google Cloud Shell
+
+# Configuration
+PROJECT_ID="records-ai"
+SERVICE_NAME="records-ai-v2"
+REGION="us-central1"
+
+# Step 1: Set project
+gcloud config set project $PROJECT_ID
+
+# Step 2: Verify authentication (optional check)
+gcloud auth list --filter=status:ACTIVE --format="value(account)"
+
+# Step 3: Deploy from source
+gcloud run deploy records-ai-v2 \
+    --source . \
+    --platform managed \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --port 8080 \
+    --max-instances 10 \
+    --min-instances 0 \
+    --timeout 300 \
+    --memory 1Gi \
+    --cpu 1 \
+    --set-env-vars GOOGLE_ENTRYPOINT="uvicorn backend.main:app --host 0.0.0.0 --port \$PORT"
+
+# Step 4: Get service URL
+gcloud run services describe records-ai-v2 \
+    --region us-central1 \
+    --format="value(status.url)"
+
+# Verify endpoints (after deployment)
+# Replace SERVICE_URL with actual URL from step 4
+
+# Test /auth/whoami (should return 401, not 404)
+curl -i https://SERVICE_URL/auth/whoami
+
+# Test /admin/bootstrap-user (should return 401/403, not 404/405)
+curl -i -X POST https://SERVICE_URL/admin/bootstrap-user \
+    -H "Content-Type: application/json" \
+    -d '{"email":"test@example.com","is_admin":false}'
+
+# Test /health (should return 200)
+curl -i https://SERVICE_URL/health
