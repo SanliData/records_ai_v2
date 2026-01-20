@@ -16,9 +16,10 @@ FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 # Create FastAPI app (MUST happen early)
 app = FastAPI(title="Records_AI_V2", version="2.0.0")
 
-# Rate limiting - OPTIONAL (wrap in try/except)
+# P1-3: Rate Limiting - Enable with fallback
 RATE_LIMITING_ENABLED = False
 limiter = None
+fallback_limiter = None
 try:
     from slowapi import Limiter, _rate_limit_exceeded_handler
     from slowapi.util import get_remote_address
@@ -27,9 +28,52 @@ try:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     RATE_LIMITING_ENABLED = True
-    logger.info("Rate limiting enabled")
+    logger.info("Rate limiting enabled via slowapi")
 except Exception as e:
-    logger.warning(f"Rate limiting disabled: {e}")
+    logger.warning(f"Rate limiting disabled (slowapi not available): {e}")
+    # P1-3: Fallback - Simple in-memory rate limit
+    try:
+        from backend.core.rate_limit import SimpleRateLimiter
+        fallback_limiter = SimpleRateLimiter(requests_per_minute=20)
+        logger.info("Fallback rate limiting enabled (in-memory)")
+    except Exception as fallback_error:
+        logger.warning(f"Fallback rate limiting also failed: {fallback_error}")
+
+
+# P1-3: Rate Limiting Middleware (fallback if slowapi not available)
+if fallback_limiter:
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.requests import Request as StarletteRequest
+    from starlette.responses import JSONResponse
+    
+    class RateLimitMiddleware(BaseHTTPMiddleware):
+        """P1-3: Fallback rate limiting middleware."""
+        
+        async def dispatch(self, request: StarletteRequest, call_next):
+            # Only apply to upload endpoint
+            if request.url.path == "/api/v1/upap/upload" and request.method == "POST":
+                client_ip = request.client.host if request.client else "unknown"
+                is_allowed, remaining = fallback_limiter.is_allowed(client_ip)
+                
+                if not is_allowed:
+                    return JSONResponse(
+                        status_code=429,
+                        content={
+                            "error": "Rate limit exceeded",
+                            "message": f"Maximum 20 requests per minute. Remaining: {remaining}",
+                            "retry_after": 60
+                        },
+                        headers={
+                            "Retry-After": "60",
+                            "X-RateLimit-Remaining": str(remaining)
+                        }
+                    )
+            
+            response = await call_next(request)
+            return response
+    
+    app.add_middleware(RateLimitMiddleware)
+    logger.info("Rate limiting middleware enabled (fallback)")
 
 # CORS Configuration
 app.add_middleware(
