@@ -147,17 +147,25 @@ class OpenAILabelService:
             confidence = result.get("confidence", 0.0)
             if confidence < self.confidence_threshold:
                 logger.info(f"Low confidence ({confidence}) - escalating to {self.escalation_model}")
-                result = self._call_openai(image_bytes, mime_type, prompt, self.escalation_model)
-                confidence = result.get("confidence", 0.0)
+                try:
+                    result = self._call_openai(image_bytes, mime_type, prompt, self.escalation_model)
+                    confidence = result.get("confidence", 0.0)
+                except Exception as escalation_error:
+                    logger.warning(f"Escalation failed, using default model result: {escalation_error}")
+                    # Use default model result even if escalation fails
             
-            # Store in cache
-            result["cached"] = False
-            self._cache[image_hash] = result.copy()
-            self._save_cache()
+            # Store in cache (only if no error)
+            if not result.get("error"):
+                result["cached"] = False
+                self._cache[image_hash] = result.copy()
+                self._save_cache()
             
             logger.info(f"OpenAI analysis successful: {result.get('artist')} - {result.get('album')} (confidence: {confidence})")
             return result
             
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse OpenAI JSON response: {e}")
+            return self._get_error_response("JSONDecodeError", str(e))
         except Exception as e:
             error_type = type(e).__name__
             error_msg = str(e)
