@@ -15,9 +15,26 @@ from backend.services.user_library_service import user_library_service
 from backend.services.global_library_service import global_library_service
 from backend.services.upap.engine.upap_engine import upap_engine
 from backend.api.v1.auth_middleware import get_current_user
-from backend.services.vinyl_pricing_service import vinyl_pricing_service
-from backend.services.lyrics_service import lyrics_service
-from backend.services.sheet_music_service import sheet_music_service
+
+# Safe import for optional services
+try:
+    from backend.services.vinyl_pricing_service import vinyl_pricing_service
+except Exception as e:
+    logger.warning(f"Failed to import vinyl_pricing_service: {e} - pricing features disabled")
+    vinyl_pricing_service = None
+
+try:
+    from backend.services.lyrics_service import lyrics_service
+except Exception as e:
+    logger.warning(f"Failed to import lyrics_service: {e} - lyrics features disabled")
+    lyrics_service = None
+
+try:
+    from backend.services.sheet_music_service import sheet_music_service
+except Exception as e:
+    logger.warning(f"Failed to import sheet_music_service: {e} - sheet music features disabled")
+    sheet_music_service = None
+
 from backend.api.v1.schemas.archive_schema import ArchiveRequestSchema
 
 logger = logging.getLogger(__name__)

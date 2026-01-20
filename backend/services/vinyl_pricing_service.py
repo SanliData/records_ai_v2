@@ -6,14 +6,17 @@ Fetches market prices from Discogs and calculates condition-based values.
 
 import requests
 import time
+import logging
 from typing import Dict, Optional, Tuple
 import os
 
-# Discogs API Token (from environment - REQUIRED)
+logger = logging.getLogger(__name__)
+
+# Discogs API Token (from environment - optional, graceful degradation)
 DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
 if not DISCOGS_TOKEN:
-    raise RuntimeError(
-        "DISCOGS_TOKEN environment variable is required. "
+    logger.warning(
+        "DISCOGS_TOKEN not set - vinyl pricing features will be unavailable. "
         "Set it in Cloud Run environment variables or Secret Manager."
     )
 DISCOGS_BASE_URL = "https://api.discogs.com"
@@ -39,10 +42,17 @@ class VinylPricingService:
     """
     
     def __init__(self):
-        self.headers = {
-            "Authorization": f"Discogs token={DISCOGS_TOKEN}",
-            "User-Agent": "RecordsAI/1.0"
-        }
+        self.enabled = bool(DISCOGS_TOKEN)
+        if self.enabled:
+            self.headers = {
+                "Authorization": f"Discogs token={DISCOGS_TOKEN}",
+                "User-Agent": "RecordsAI/1.0"
+            }
+        else:
+            self.headers = {
+                "User-Agent": "RecordsAI/1.0"
+            }
+            logger.warning("VinylPricingService initialized without DISCOGS_TOKEN - pricing features disabled")
     
     def get_market_prices(
         self, 
