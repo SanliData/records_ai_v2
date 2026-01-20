@@ -370,7 +370,7 @@ async def add_to_archive(
         lyrics_data = None
         sheet_music_data = None
         
-        if artist:
+        if artist and lyrics_service:
             try:
                 # Get album-level lyrics links (use album name as song title for search)
                 song_title_for_search = album or record_info.get("title") or "Greatest Hits"
@@ -396,7 +396,10 @@ async def add_to_archive(
             
             try:
                 # Get sheet music links
-                sheet_music_data = sheet_music_service.get_sheet_music_links(
+                if not sheet_music_service:
+                    sheet_music_data = None
+                else:
+                    sheet_music_data = sheet_music_service.get_sheet_music_links(
                     artist=artist,
                     song_title=album or record_info.get("title") or "Greatest Hits",
                     album=album,
