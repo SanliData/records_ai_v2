@@ -5,8 +5,11 @@
 import os
 import json
 import base64
+import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 try:
     from openai import OpenAI
@@ -126,13 +129,34 @@ Return ONLY valid JSON with this structure:
                 }
             ]
             
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # Using latest vision model
-                messages=messages,
-                temperature=0.2,
-                max_tokens=1000,
-                response_format={"type": "json_object"}
-            )
+            # P1-2: OpenAI Timeout + Fail-Fast
+            try:
+                response = self.client.chat.completions.create(
+                    model="gpt-4o-mini",  # Using latest vision model
+                    messages=messages,
+                    temperature=0.2,
+                    max_tokens=1000,
+                    response_format={"type": "json_object"},
+                    timeout=30.0  # 30 second timeout
+                )
+            except Exception as openai_error:
+                # Handle OpenAI errors gracefully
+                error_type = type(openai_error).__name__
+                error_msg = str(openai_error)
+                
+                # Check for specific error types
+                if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+                    logger.warning(f"[OpenAI] Request timeout: {error_msg}")
+                    return self._get_fallback_result("OpenAI API timeout (30s)")
+                elif "429" in error_msg or "rate limit" in error_msg.lower() or "quota" in error_msg.lower():
+                    logger.warning(f"[OpenAI] Rate limit/quota exceeded: {error_msg}")
+                    return self._get_fallback_result("OpenAI API rate limit/quota exceeded")
+                elif "401" in error_msg or "invalid" in error_msg.lower():
+                    logger.error(f"[OpenAI] Invalid API key or authentication error: {error_msg}")
+                    return self._get_fallback_result("OpenAI API authentication failed")
+                else:
+                    logger.error(f"[OpenAI] Unexpected error: {error_type} - {error_msg}")
+                    return self._get_fallback_result(f"OpenAI API error: {error_type}")
             
             raw_content = response.choices[0].message.content
             
