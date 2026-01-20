@@ -394,31 +394,29 @@ async def add_to_archive(
                     "fetched_at": datetime.utcnow().isoformat()
                 }
             
-            try:
-                # Get sheet music links
-                if not sheet_music_service:
-                    sheet_music_data = None
-                else:
+            if sheet_music_service:
+                try:
+                    # Get sheet music links
                     sheet_music_data = sheet_music_service.get_sheet_music_links(
-                    artist=artist,
-                    song_title=album or record_info.get("title") or "Greatest Hits",
-                    album=album,
-                    composer=record_info.get("composer")
-                )
-                
-                # Store sheet music links in archive record
-                if sheet_music_data.get("sheet_music_links"):
-                    archive_record["sheet_music_data"] = sheet_music_data
-                    # Also update global record
-                    if not global_record.get("sheet_music_data"):
-                        global_record["sheet_music_data"] = sheet_music_data
-                
-            except Exception as sheet_music_error:
-                print(f"[Archive] Sheet music fetch failed for {artist} - {album}: {sheet_music_error}")
-                sheet_music_data = {
-                    "error": str(sheet_music_error),
-                    "fetched_at": datetime.utcnow().isoformat()
-                }
+                        artist=artist,
+                        song_title=album or record_info.get("title") or "Greatest Hits",
+                        album=album,
+                        composer=record_info.get("composer")
+                    )
+                    
+                    # Store sheet music links in archive record
+                    if sheet_music_data.get("sheet_music_links"):
+                        archive_record["sheet_music_data"] = sheet_music_data
+                        # Also update global record
+                        if not global_record.get("sheet_music_data"):
+                            global_record["sheet_music_data"] = sheet_music_data
+                            
+                except Exception as sheet_music_error:
+                    print(f"[Archive] Sheet music fetch failed for {artist} - {album}: {sheet_music_error}")
+                    sheet_music_data = {
+                        "error": str(sheet_music_error),
+                        "fetched_at": datetime.utcnow().isoformat()
+                    }
         
         # STEP 5: Add to user library (reference to global archive)
         # P0-3: Idempotency - add_record will check for existing record
