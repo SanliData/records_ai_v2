@@ -4,7 +4,7 @@
 
 param(
     [string]$Email = "ednovitsky@novitskyarchive.com",
-    [string]$Password = "ism058SAN.,?",
+    [string]$Password = "",
     [string]$BaseUrl = "https://records-ai-v2-969278596906.us-central1.run.app"
 )
 

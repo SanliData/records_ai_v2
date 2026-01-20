@@ -146,12 +146,17 @@ def create_admin_user(email: str, password: str):
 
 def main():
     email = os.getenv("ADMIN_EMAIL", "ednovitsky@novitskyarchive.com")
-    password = os.getenv("ADMIN_PASSWORD", "ism058SAN.,?")
+    password = os.getenv("ADMIN_PASSWORD", "")
     
     if len(sys.argv) > 1:
         email = sys.argv[1]
     if len(sys.argv) > 2:
         password = sys.argv[2]
+    
+    # Prompt for password if not provided
+    if not password:
+        import getpass
+        password = getpass.getpass(f"Enter password for {email}: ")
     
     try:
         user = create_admin_user(email, password)

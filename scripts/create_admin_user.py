@@ -5,7 +5,11 @@ Create Admin User Script
 Creates or updates an admin user in the database.
 
 Usage:
-    python scripts/create_admin_user.py --email ednovitsky@novitskyarchive.com --password "ism058SAN.,?" --admin
+    python scripts/create_admin_user.py --email ednovitsky@novitskyarchive.com --password "YOUR_PASSWORD" --admin
+    
+    Or set ADMIN_PASSWORD environment variable:
+    export ADMIN_PASSWORD="your-password"
+    python scripts/create_admin_user.py --email ednovitsky@novitskyarchive.com --admin
 """
 
 import argparse

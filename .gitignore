@@ -1,36 +1,54 @@
-﻿__pycache__/
-*.pyc
-.env
+﻿# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
 .venv/
 venv/
-storage/uploads/
-live_book/
-# Secrets / keys
-*.json
-*.key
-*.pem
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
 .env
-records-ai-runtime-key.json
-sa-key.json
+.env.local
 
-# Databases
+# Database
 *.db
+*.sqlite
+*.sqlite3
 
-# Uploads / runtime data
-uploads/
-storage/
-media/
-data/
-
-# Tests & local artifacts
-test_*.txt
-archive.json
-process.json
-
-# Python
-__pycache__/
-*.pyc
+# Logs
+*.log
+.cursor/debug.log
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Secrets and tokens
+*.token
+*.key
+*.pem
+.auth_token.txt
+.admin_token.txt
+*.secret
+
+# Test outputs
+final_kill_test_report.json
+*.test.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -16,8 +16,15 @@ echo ""
 
 # Set default values
 EMAIL="${1:-ednovitsky@novitskyarchive.com}"
-PASSWORD="${2:-ism058SAN.,?}"
+PASSWORD="${2:-}"
 BASE_URL="${3:-https://records-ai-v2-969278596906.us-central1.run.app}"
+
+# Prompt for password if not provided
+if [ -z "$PASSWORD" ]; then
+    echo -n "Enter password for $EMAIL: "
+    read -s PASSWORD
+    echo ""
+fi
 
 echo "Email: $EMAIL"
 echo "Password: ${PASSWORD:0:3}***"

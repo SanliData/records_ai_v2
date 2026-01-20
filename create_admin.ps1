@@ -3,11 +3,17 @@
 
 param(
     [string]$Email = "ednovitsky@novitskyarchive.com",
-    [string]$Password = "ism058SAN.,?"
+    [string]$Password = ""
 )
 
 Write-Host "=== Create Admin User ===" -ForegroundColor Cyan
 Write-Host ""
+if (-not $Password) {
+    $SecurePassword = Read-Host "Enter password for $Email" -AsSecureString
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword)
+    $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+}
+
 Write-Host "Email: $Email" -ForegroundColor Yellow
 Write-Host "Admin: Yes" -ForegroundColor Yellow
 Write-Host ""
