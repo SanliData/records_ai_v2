@@ -9,7 +9,15 @@ from difflib import SequenceMatcher
 # VinylOps - EasyOCR Refinement with Discogs Matching
 # ====================================================
 
-DISCOGS_TOKEN = "LSZAwZzoglUrbLSkoyFijkxGqQvzAbBnkZgUQDNs"
+# Discogs API Token (from environment - REQUIRED)
+import os
+DISCOGS_TOKEN = os.getenv("DISCOGS_TOKEN")
+if not DISCOGS_TOKEN:
+    raise RuntimeError(
+        "DISCOGS_TOKEN environment variable is required. "
+        "Set it with: export DISCOGS_TOKEN=your_token_here"
+    )
+
 BASE_URL = "https://api.discogs.com/database/search"
 HEADERS = {
     "Authorization": f"Discogs token={DISCOGS_TOKEN}",
