@@ -442,11 +442,22 @@
         }
 
         function displayRecord(record) {
-            // Set images
+            // Set images - ensure absolute URLs
+            const API_BASE_URL = window.location.origin;
             const imageUrl = record.thumbnail_url || record.file_path || record.canonical_image_path;
             if (imageUrl) {
-                document.getElementById('recordImage').src = imageUrl;
-                document.getElementById('labelImage').src = imageUrl;
+                // Build absolute URL if relative
+                let fullImageUrl;
+                if (imageUrl.startsWith('http')) {
+                    fullImageUrl = imageUrl;
+                } else if (imageUrl.startsWith('/')) {
+                    fullImageUrl = API_BASE_URL + imageUrl;
+                } else {
+                    fullImageUrl = API_BASE_URL + '/' + imageUrl;
+                }
+                console.log('[PREVIEW] Serving static:', imageUrl, '->', fullImageUrl);
+                document.getElementById('recordImage').src = fullImageUrl;
+                document.getElementById('labelImage').src = fullImageUrl;
             }
 
             // Set metadata

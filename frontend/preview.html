@@ -457,10 +457,18 @@
             console.log('[PREVIEW] Image URL:', imageUrl);
             
             if (imageUrl) {
-                // Make absolute URL if relative
-                const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : 
-                    (imageUrl.startsWith('/') ? window.location.origin + imageUrl : window.location.origin + '/' + imageUrl);
+                // Make absolute URL if relative - ensure proper path handling
+                let fullImageUrl;
+                if (imageUrl.startsWith('http')) {
+                    fullImageUrl = imageUrl;
+                } else if (imageUrl.startsWith('/')) {
+                    fullImageUrl = window.location.origin + imageUrl;
+                } else {
+                    // Relative path - prepend with origin
+                    fullImageUrl = window.location.origin + '/' + imageUrl;
+                }
                 
+                console.log('[PREVIEW] Image URL:', imageUrl);
                 console.log('[PREVIEW] Full image URL:', fullImageUrl);
                 
                 document.getElementById('recordImage').src = fullImageUrl;
