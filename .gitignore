@@ -42,6 +42,7 @@ Thumbs.db
 *.pem
 .auth_token.txt
 .admin_token.txt
+.discogs_token.txt
 *.secret
 
 # Test outputs
