@@ -24,7 +24,24 @@ gcloud config set project $PROJECT_ID
 # Step 2: Verify authentication
 echo ""
 echo "[2/4] Checking authentication..."
-gcloud auth list --filter=status:ACTIVE --format="value(account)"
+ACTIVE_ACCOUNT=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>&1)
+
+if [ -z "$ACTIVE_ACCOUNT" ]; then
+    echo "⚠️  No active account found. Running gcloud auth login..."
+    echo ""
+    echo "Please authenticate in the browser window that will open."
+    echo "Or if you're in Cloud Shell, authentication should be automatic."
+    echo ""
+    gcloud auth login --no-launch-browser 2>&1 || gcloud auth login
+    ACTIVE_ACCOUNT=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>&1)
+fi
+
+if [ -z "$ACTIVE_ACCOUNT" ]; then
+    echo "❌ Authentication failed. Please run: gcloud auth login"
+    exit 1
+fi
+
+echo "✅ Authenticated as: $ACTIVE_ACCOUNT"
 
 # Step 3: Deploy from source
 echo ""
