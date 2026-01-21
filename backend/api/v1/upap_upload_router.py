@@ -449,6 +449,23 @@ async def upload(
             
             logger.info(f"[UPLOAD] Processing image: {temp_file}, user_id: {current_user.id}, record_id: {record_id}")
             
+            # Initialize enhancement variables (may not be used if enhancement is disabled)
+            enhanced_image_path = None
+            enhancement_result = None
+            original_image_path = None
+            
+            # Optional: Image enhancement (if enabled)
+            try:
+                enhancement_result = image_enhancement_service.enhance_image(str(temp_file))
+                if enhancement_result and enhancement_result.get("enhanced"):
+                    enhanced_image_path = enhancement_result.get("enhanced_image_path")
+                    original_image_path = enhancement_result.get("original_image_path")
+                    logger.info(f"[UPLOAD] Image enhancement completed: {enhanced_image_path}")
+            except Exception as enh_error:
+                logger.warning(f"[UPLOAD] Image enhancement skipped: {enh_error}")
+                enhancement_result = None
+                enhanced_image_path = None
+            
             # Convert to standard JPEG format for archive
             standard_jpeg_path = None
             try:
