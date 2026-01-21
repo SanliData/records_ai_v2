@@ -78,6 +78,34 @@ async def upload(
     """
     UPAP upload endpoint (prod-stable).
     Requires authentication - only authenticated users can upload.
+    """
+    # #region agent log - Entry point
+    import json
+    import os
+    try:
+        log_dir = r"c:\Users\issan\records_ai_v2\.cursor"
+        log_path = os.path.join(log_dir, "debug.log")
+        os.makedirs(log_dir, exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            log_file.write(json.dumps({
+                "id": "log_upload_endpoint_entry",
+                "timestamp": int(datetime.now().timestamp() * 1000),
+                "location": "upap_upload_router.py:71",
+                "message": "Upload endpoint ENTRY - BEFORE auth dependency",
+                "data": {
+                    "endpoint": "/api/v1/upap/upload",
+                    "filename": file.filename,
+                    "email": email
+                },
+                "sessionId": "debug-session",
+                "runId": "run1",
+                "hypothesisId": "ENTRY"
+            }) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to write entry log: {e}", exc_info=True)
+    # #endregion
+    
+    """
     
     SECURITY:
     - Authentication required (valid Bearer token)

@@ -389,14 +389,24 @@
 
         // Get preview data from URL params or localStorage
         window.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const previewId = urlParams.get('id');
-            const storedData = localStorage.getItem('preview_data');
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const previewId = urlParams.get('id');
+                const storedData = localStorage.getItem('preview_data');
 
-            if (previewId || storedData) {
-                loadPreview(previewId, storedData);
-            } else {
-                showError('No preview data found. Please upload a record first.');
+                console.log('[PREVIEW] Initialization:', { previewId, hasStoredData: !!storedData, storedDataPreview: storedData ? storedData.substring(0, 200) : 'none' });
+
+                if (previewId || storedData) {
+                    loadPreview(previewId, storedData);
+                } else {
+                    console.error('[PREVIEW] No preview data found');
+                    showError('No preview data found. Please upload a record first.');
+                    document.getElementById('loading').classList.remove('active');
+                }
+            } catch (error) {
+                console.error('[PREVIEW] Initialization error:', error);
+                showError('Error initializing preview: ' + error.message);
+                document.getElementById('loading').classList.remove('active');
             }
         });
 
@@ -438,9 +448,16 @@
                 document.getElementById('previewContent').style.display = 'block';
 
             } catch (error) {
-                console.error('Error loading preview:', error);
-                showError('Failed to load preview: ' + error.message);
+                console.error('[PREVIEW] Error loading preview:', error);
+                console.error('[PREVIEW] Error stack:', error.stack);
+                showError('Failed to load preview: ' + (error.message || 'Unknown error'));
                 document.getElementById('loading').classList.remove('active');
+                // Show error message in UI
+                const alertBox = document.getElementById('alertBox');
+                if (alertBox) {
+                    alertBox.textContent = 'Error: ' + (error.message || 'Unknown error');
+                    alertBox.className = 'alert alert-error active';
+                }
             }
         }
 
@@ -475,6 +492,12 @@
                 document.getElementById('labelImage').src = fullImageUrl;
             } else {
                 console.warn('[PREVIEW] No image URL found in record');
+                console.warn('[PREVIEW] Record keys:', Object.keys(record));
+                console.warn('[PREVIEW] RecordData keys:', recordData ? Object.keys(recordData) : 'null');
+                // Show placeholder or error message
+                const imageError = 'No image available';
+                document.getElementById('recordImage').alt = imageError;
+                document.getElementById('labelImage').alt = imageError;
             }
 
             // Set metadata - try both top-level and nested record

@@ -35,6 +35,36 @@ def register_exception_handlers(app):
     @app.exception_handler(HTTPException)
     async def http_exc_handler(request: Request, exc: HTTPException):
         request_id = getattr(request.state, "request_id", None)
+        
+        # #region agent log - Exception handler
+        import json
+        import os
+        from datetime import datetime
+        try:
+            log_dir = r"c:\Users\issan\records_ai_v2\.cursor"
+            log_path = os.path.join(log_dir, "debug.log")
+            os.makedirs(log_dir, exist_ok=True)
+            with open(log_path, "a", encoding="utf-8") as log_file:
+                log_file.write(json.dumps({
+                    "id": "log_exception_handler",
+                    "timestamp": int(datetime.now().timestamp() * 1000),
+                    "location": "error_handler.py:36",
+                    "message": "HTTPException caught in handler",
+                    "data": {
+                        "status_code": exc.status_code,
+                        "detail": str(exc.detail),
+                        "path": request.url.path,
+                        "request_id": request_id,
+                        "detail_type": type(exc.detail).__name__
+                    },
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "EXCEPTION_HANDLER"
+                }) + "\n")
+        except Exception as log_err:
+            logger.error(f"Failed to write exception handler log: {log_err}", exc_info=True)
+        # #endregion
+        
         return JSONResponse(
             status_code=exc.status_code,
             content={

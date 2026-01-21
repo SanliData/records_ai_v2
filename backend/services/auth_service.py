@@ -98,15 +98,139 @@ class AuthService:
         Returns:
             User object or None if not found
         """
+        # #region agent log
+        import json
+        import os
+        from datetime import datetime
+        try:
+            log_dir = r"c:\Users\issan\records_ai_v2\.cursor"
+            log_path = os.path.join(log_dir, "debug.log")
+            os.makedirs(log_dir, exist_ok=True)
+            with open(log_path, "a", encoding="utf-8") as log_file:
+                log_file.write(json.dumps({
+                    "id": f"log_get_user_by_id_entry",
+                    "timestamp": int(datetime.now().timestamp() * 1000),
+                    "location": "auth_service.py:91",
+                    "message": "get_user_by_id entry",
+                    "data": {
+                        "user_id_input": str(user_id),
+                        "user_id_type": str(type(user_id)),
+                        "user_id_repr": repr(user_id)
+                    },
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "A"
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
         try:
             from uuid import UUID
             # Convert string to UUID if needed
             user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
-            return self.db.query(User).filter(User.id == user_uuid).first()
+            # #region agent log
+            import os
+            try:
+                log_dir = r"c:\Users\issan\records_ai_v2\.cursor"
+                log_path = os.path.join(log_dir, "debug.log")
+                os.makedirs(log_dir, exist_ok=True)
+                with open(log_path, "a", encoding="utf-8") as log_file:
+                    log_file.write(json.dumps({
+                        "id": f"log_uuid_conversion",
+                        "timestamp": int(datetime.now().timestamp() * 1000),
+                        "location": "auth_service.py:108",
+                        "message": "UUID conversion success",
+                        "data": {
+                            "original_user_id": str(user_id),
+                            "converted_uuid": str(user_uuid),
+                            "uuid_type": str(type(user_uuid))
+                        },
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "A"
+                    }) + "\n")
+            except Exception as e:
+                logger.error(f"Failed to write debug log: {e}", exc_info=True)
+            # #endregion
+            user = self.db.query(User).filter(User.id == user_uuid).first()
+            # #region agent log
+            import os
+            try:
+                log_dir = r"c:\Users\issan\records_ai_v2\.cursor"
+                log_path = os.path.join(log_dir, "debug.log")
+                os.makedirs(log_dir, exist_ok=True)
+                with open(log_path, "a", encoding="utf-8") as log_file:
+                    log_file.write(json.dumps({
+                        "id": f"log_db_query_result",
+                        "timestamp": int(datetime.now().timestamp() * 1000),
+                        "location": "auth_service.py:120",
+                        "message": "DB query result",
+                        "data": {
+                            "user_id": str(user_id),
+                            "user_found": user is not None,
+                            "user_email": user.email if user else None,
+                            "query_user_id": str(user.id) if user else None
+                        },
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "A"
+                    }) + "\n")
+            except Exception as e:
+                logger.error(f"Failed to write debug log: {e}", exc_info=True)
+            # #endregion
+            return user
         except (ValueError, TypeError) as e:
+            # #region agent log
+            import os
+            try:
+                log_dir = r"c:\Users\issan\records_ai_v2\.cursor"
+                log_path = os.path.join(log_dir, "debug.log")
+                os.makedirs(log_dir, exist_ok=True)
+                with open(log_path, "a", encoding="utf-8") as log_file:
+                    log_file.write(json.dumps({
+                        "id": f"log_uuid_conversion_failed",
+                        "timestamp": int(datetime.now().timestamp() * 1000),
+                        "location": "auth_service.py:142",
+                        "message": "UUID conversion FAILED",
+                        "data": {
+                            "user_id": str(user_id),
+                            "error_type": type(e).__name__,
+                            "error_message": str(e)
+                        },
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "C"
+                    }) + "\n")
+            except Exception as log_err:
+                logger.error(f"Failed to write debug log: {log_err}", exc_info=True)
+            # #endregion
             logger.warning(f"Invalid user_id format: {user_id}, error: {e}")
             return None
         except Exception as e:
+            # #region agent log
+            import os
+            try:
+                log_dir = r"c:\Users\issan\records_ai_v2\.cursor"
+                log_path = os.path.join(log_dir, "debug.log")
+                os.makedirs(log_dir, exist_ok=True)
+                with open(log_path, "a", encoding="utf-8") as log_file:
+                    log_file.write(json.dumps({
+                        "id": f"log_db_query_exception",
+                        "timestamp": int(datetime.now().timestamp() * 1000),
+                        "location": "auth_service.py:156",
+                        "message": "DB query exception",
+                        "data": {
+                            "user_id": str(user_id),
+                            "error_type": type(e).__name__,
+                            "error_message": str(e)
+                        },
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "E"
+                    }) + "\n")
+            except Exception as log_err:
+                logger.error(f"Failed to write debug log: {log_err}", exc_info=True)
+            # #endregion
             logger.error(f"Error fetching user by id: {e}", exc_info=True)
             return None
 
