@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from backend.models.preview_record_db import PreviewRecordDB
 from backend.models.record_state import RecordState
 from backend.db import SessionLocal
+from backend.services.pipeline_logger import pipeline_logger
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,10 @@ class AIPipeline:
                 "metadata": {...}
             }
         """
+        # RUNTIME PROOF: Log entry point
+        logger.warning(f"[AI_PIPELINE] 🎯 ENTRY: run_ai_pipeline called with preview_id={preview_id}")
+        print(f"[AI_PIPELINE] 🎯 ENTRY: run_ai_pipeline called with preview_id={preview_id}")
+        
         db = SessionLocal()
         try:
             # Load preview record
@@ -64,15 +69,25 @@ class AIPipeline:
             ).first()
             
             if not preview:
+                logger.error(f"[AI_PIPELINE] ❌ Preview record not found: {preview_id}")
+                print(f"[AI_PIPELINE] ❌ Preview record not found: {preview_id}")
                 raise ValueError(f"Preview record not found: {preview_id}")
+            
+            logger.warning(f"[AI_PIPELINE] 📥 Preview loaded: preview_id={preview_id}, state={preview.state}, file={preview.canonical_image_path}")
+            print(f"[AI_PIPELINE] 📥 Preview loaded: preview_id={preview_id}, state={preview.state}")
             
             if preview.state != RecordState.UPLOADED:
                 logger.warning(f"Preview {preview_id} already processed, state: {preview.state}")
                 return self._build_response(preview)
             
             # Step 1: Level 1 - OCR + Text Extraction (cheap)
+            logger.warning(f"[AI_PIPELINE] 🔍 LEVEL_1_START: preview_id={preview_id}")
+            print(f"[AI_PIPELINE] 🔍 LEVEL_1_START: preview_id={preview_id}")
             self._log_step(preview_id, "LEVEL_1_START", {"model": "ocr+text"})
+            pipeline_logger.log_step(preview_id, "UPLOADED", "LEVEL_1_START", {"model": "ocr+text"})
             ocr_result = await self._extract_ocr_and_text(preview)
+            logger.warning(f"[AI_PIPELINE] 📝 OCR extracted: preview_id={preview_id}, text_length={len(ocr_result.get('text', ''))}")
+            print(f"[AI_PIPELINE] 📝 OCR extracted: preview_id={preview_id}, text_length={len(ocr_result.get('text', ''))}")
             
             # Step 2: Parse metadata from OCR
             metadata = await self._parse_metadata(ocr_result)
@@ -100,6 +115,9 @@ class AIPipeline:
                 cost_estimate = 0.01  # More expensive
             
             # Step 4: Update preview record
+            logger.warning(f"[AI_PIPELINE] 💾 Updating DB: preview_id={preview_id}, confidence={confidence}, artist={metadata.get('artist')}")
+            print(f"[AI_PIPELINE] 💾 Updating DB: preview_id={preview_id}, confidence={confidence}, artist={metadata.get('artist')}")
+            
             preview.state = RecordState.AI_ANALYZED
             preview.ocr_text = ocr_result.get("text", "")
             preview.ai_metadata = metadata
@@ -121,6 +139,10 @@ class AIPipeline:
             db.commit()
             db.refresh(preview)
             
+            # RUNTIME PROOF: Verify database update
+            logger.warning(f"[AI_PIPELINE] ✅ DB UPDATED: preview_id={preview_id}, state={preview.state}, artist={preview.artist}, album={preview.album}")
+            print(f"[AI_PIPELINE] ✅ DB UPDATED: preview_id={preview_id}, state={preview.state}, artist={preview.artist}, album={preview.album}")
+            
             # Step 5: Auto-archive if confidence is very high
             if confidence >= self.AUTO_ARCHIVE_THRESHOLD:
                 self._log_step(preview_id, "AUTO_ARCHIVE_TRIGGER", {
@@ -134,6 +156,13 @@ class AIPipeline:
                 "confidence": confidence,
                 "model_used": model_used,
                 "cost_estimate": cost_estimate
+            })
+            pipeline_logger.log_step(preview_id, preview.state.value, "AI_PIPELINE_COMPLETE", {
+                "confidence": confidence,
+                "model_used": model_used,
+                "cost_estimate": cost_estimate,
+                "artist": preview.artist,
+                "album": preview.album
             })
             
             return self._build_response(preview)

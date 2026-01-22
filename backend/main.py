@@ -346,6 +346,13 @@ except Exception as e:
     logger.error(f"Failed to load upap_archive_router_v2: {e}", exc_info=True)
 
 try:
+    from backend.api.v1.upap_preview_router_v2 import router as upap_preview_router_v2
+    app.include_router(upap_preview_router_v2)
+    ROUTERS_LOADED.append("upap_preview_v2")
+except Exception as e:
+    logger.error(f"Failed to load upap_preview_router_v2: {e}", exc_info=True)
+
+try:
     from backend.api.v1.upap_publish_router import router as upap_publish_router
     app.include_router(upap_publish_router)
     ROUTERS_LOADED.append("upap_publish")

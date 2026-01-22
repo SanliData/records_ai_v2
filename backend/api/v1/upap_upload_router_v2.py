@@ -169,8 +169,29 @@ async def upload_v2(
     db.commit()
     db.refresh(preview)
     
-    # Enqueue AI pipeline (async, non-blocking)
-    asyncio.create_task(ai_pipeline.run_ai_pipeline(preview_id))
+    # RUNTIME PROOF: Log before AI pipeline trigger
+    logger.warning(f"[UPLOAD_V2] ⚡ AI PIPELINE TRIGGERED: preview_id={preview_id}")
+    print(f"[UPLOAD_V2] ⚡ AI PIPELINE TRIGGERED: preview_id={preview_id}")
+    
+    # Enqueue AI pipeline (async, non-blocking) with error handling
+    async def run_ai_with_proof(preview_id: str):
+        """Wrapper to ensure AI pipeline runs and logs proof."""
+        try:
+            logger.warning(f"[AI_PIPELINE] 🚀 STARTING: preview_id={preview_id}")
+            print(f"[AI_PIPELINE] 🚀 STARTING: preview_id={preview_id}")
+            result = await ai_pipeline.run_ai_pipeline(preview_id)
+            logger.warning(f"[AI_PIPELINE] ✅ COMPLETED: preview_id={preview_id}, state={result.get('state')}")
+            print(f"[AI_PIPELINE] ✅ COMPLETED: preview_id={preview_id}, state={result.get('state')}")
+            return result
+        except Exception as e:
+            logger.error(f"[AI_PIPELINE] ❌ FAILED: preview_id={preview_id}, error={e}", exc_info=True)
+            print(f"[AI_PIPELINE] ❌ FAILED: preview_id={preview_id}, error={e}")
+            raise
+    
+    # Create task and store reference for debugging
+    ai_task = asyncio.create_task(run_ai_with_proof(preview_id))
+    logger.warning(f"[UPLOAD_V2] 📋 AI TASK CREATED: preview_id={preview_id}, task={ai_task}")
+    print(f"[UPLOAD_V2] 📋 AI TASK CREATED: preview_id={preview_id}")
     
     # Log upload
     logger.info(f"[UPLOAD_V2] File uploaded: preview_id={preview_id}, user_id={current_user.id}, size={total_size}")
