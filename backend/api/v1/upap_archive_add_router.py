@@ -11,8 +11,8 @@ router = APIRouter(prefix="/api/v1/upap", tags=["UPAP"])
 class ArchiveAddRequest(BaseModel):
     preview_id: str | None = None
     record_id: str | None = None
-    artist: str
-    album: str
+    artist: str | None = None
+    album: str | None = None
     title: str | None = None
     label: str | None = None
     year: str | None = None
