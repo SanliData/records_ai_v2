@@ -20,7 +20,7 @@ class ArchiveRequestSchema(BaseModel):
     - Type validation
     """
     
-    record_id: Optional[str] = Field(None, min_length=1, max_length=255, description="Record ID (UUID)")
+    record_id: Optional[str] = Field(None, max_length=255, description="Record ID (UUID)")
     preview_id: Optional[str] = Field(None, max_length=255, description="Preview ID (UUID)")
     email: Optional[str] = Field(None, max_length=255, description="User email")
     
