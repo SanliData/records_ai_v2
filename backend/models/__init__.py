@@ -1,4 +1,8 @@
 #backend/models/__init__.py
+# Import all models for SQLAlchemy table creation
+from backend.models.record_state import RecordState
+from backend.models.preview_record_db import PreviewRecordDB
+from backend.models.archive_record_db_v2 import ArchiveRecordDB
 # UTF-8, English only
 # Final, law-compliant, book-compliant model export
 

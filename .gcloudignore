@@ -53,6 +53,9 @@ _tester_backups/
 # Logs
 *.log
 logs/
+.cursor/
+.debug.log
+debug.log
 
 # Temporary files
 tmp/

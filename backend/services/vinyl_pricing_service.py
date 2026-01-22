@@ -388,5 +388,30 @@ class VinylPricingService:
         }
 
 
-# Global instance
-vinyl_pricing_service = VinylPricingService()
+# Global instance - safe initialization (never crash app)
+try:
+    vinyl_pricing_service = VinylPricingService()
+except Exception as e:
+    logger.error(f"Failed to initialize VinylPricingService: {e}")
+    # Create a dummy service instance that always returns None/empty values
+    class DummyVinylPricingService:
+        def __init__(self):
+            self.enabled = False
+        def get_market_prices(self, *args, **kwargs):
+            return {
+                "price_low": None,
+                "price_high": None,
+                "price_median": None,
+                "currency": "USD",
+                "source": None,
+                "url": None,
+                "sample_size": 0
+            }
+        def get_release_info(self, *args, **kwargs):
+            return {"status": "service_unavailable"}
+        def calculate_condition_price(self, *args, **kwargs):
+            return 0.0
+        def get_estimated_value(self, *args, **kwargs):
+            return {"estimated_value": 0.0, "calculation_method": "service_unavailable"}
+    vinyl_pricing_service = DummyVinylPricingService()
+    logger.warning("Using dummy VinylPricingService - pricing features disabled")

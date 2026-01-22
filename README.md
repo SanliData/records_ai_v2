@@ -52,9 +52,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-Access the application:
+```Access the application:
 - **Home**: http://127.0.0.1:8000/ui/index.html
 - **Upload**: http://127.0.0.1:8000/ui/upload.html
 - **API Docs**: http://127.0.0.1:8000/docs---
@@ -69,9 +67,7 @@ Access the application:
 - **Library** (`/ui/library.html`) - View personal archive
 - **Login** (`/ui/login.html`) - Sign in / Sign up
 
----## UPAP Pipeline Compliance
-
-All frontend pages use UPAP-compliant endpoints:
+---## UPAP Pipeline ComplianceAll frontend pages use UPAP-compliant endpoints:
 
 - **Upload**: `/upap/process/process/preview` (Upload → Process, preview mode)
 - **Archive**: `/upap/archive/add` (Archive stage, requires auth)

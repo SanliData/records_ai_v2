@@ -1,0 +1,172 @@
+AI-ORCHESTRATED PIPELINE ARCHITECTURE
+=====================================
+
+UPLOAD STAGE
+------------
+POST /api/v1/upap/upload
+  ↓
+[Backend]
+  1. Save file to storage/temp/{user_id}/{preview_id}_{filename}
+  2. Convert to standard JPEG: storage/archive/{user_id}/{preview_id}.jpg
+  3. Create PreviewRecordDB (state=UPLOADED)
+  4. Enqueue AI pipeline (async, non-blocking)
+  5. Return: {"preview_id": "..."}
+  
+[Frontend]
+  - Receives ONLY preview_id
+  - NO metadata
+  - NO AI calls
+  - NO ID generation
+
+
+AI PIPELINE (Async)
+-------------------
+[Level 1: OCR + Text - CHEAP]
+  ↓
+  Extract OCR text
+  Parse metadata (simple heuristics)
+  Calculate confidence
+  ↓
+  [If confidence >= 0.75]
+    → Skip expensive models
+    → State = AI_ANALYZED
+    → Cost: ~$0.001
+  ↓
+  [If confidence < 0.75]
+    → Escalate to Level 3
+    ↓
+[Level 3: Advanced Vision - EXPENSIVE]
+  ↓
+  GPT-4 Vision analysis
+  Merge metadata
+  Recalculate confidence
+  ↓
+  State = AI_ANALYZED
+  Cost: ~$0.01
+
+
+USER REVIEW (Optional)
+----------------------
+[Frontend]
+  - Displays preview with metadata
+  - User can review/edit
+  - Calls: POST /api/v1/upap/preview/{preview_id}/review
+  ↓
+[Backend]
+  - Updates PreviewRecordDB
+  - State = USER_REVIEWED
+
+
+ENRICHMENT STAGE
+----------------
+[Level 1: Cache - FREE]
+  ↓
+  Check in-memory cache
+  [If found] → State = ENRICHED, source = "cache"
+  ↓
+  [If not found]
+    ↓
+[Level 2: Discogs API - FREE]
+  ↓
+  Search Discogs
+  [If found] → Cache result, State = ENRICHED, source = "discogs"
+  ↓
+  [If not found]
+    ↓
+[Level 3: AI Enrichment - EXPENSIVE]
+  ↓
+  GPT-4 Vision analysis
+  Cache result
+  State = ENRICHED, source = "ai"
+
+
+ARCHIVE STAGE
+-------------
+POST /api/v1/upap/archive
+  Body: {"preview_id": "..."}
+  ↓
+[Backend]
+  1. Load PreviewRecordDB
+  2. Validate state (must be AI_ANALYZED, USER_REVIEWED, or ENRICHED)
+  3. Validate required fields (artist or album)
+  4. Generate record_id (backend owns this)
+  5. Create ArchiveRecordDB
+  6. Delete PreviewRecordDB (temp state, no longer needed)
+  7. Return: {"record_id": "..."}
+  
+[Frontend]
+  - Sends ONLY preview_id
+  - NO metadata
+  - Receives record_id
+
+
+STATE TRANSITIONS
+-----------------
+UPLOADED
+  ↓ (AI Pipeline)
+AI_ANALYZED
+  ↓ (Optional User Review)
+USER_REVIEWED
+  ↓ (Enrichment)
+ENRICHED
+  ↓ (Archive)
+ARCHIVED
+
+
+COST OPTIMIZATION
+-----------------
+Strategy: Always try cheapest first
+
+Level 1 (OCR):     ~$0.001  → Try first
+Level 2 (Discogs): Free     → Try second
+Level 3 (GPT-4):   ~$0.01   → Only if needed
+
+Confidence Thresholds:
+- >= 0.75: Skip expensive models
+- >= 0.9:  Auto-archive (skip user review)
+
+
+LOGGING
+-------
+Every step logs to logs/pipeline.log (NDJSON):
+
+{
+  "preview_id": "uuid",
+  "state": "AI_ANALYZED",
+  "step": "LEVEL_1_START",
+  "model_used": "ocr+text",
+  "confidence": 0.83,
+  "cost_estimate": 0.002,
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+
+Audit trail proves:
+- Each step executed
+- Model used
+- Cost incurred
+- Confidence achieved
+
+
+DATABASE SCHEMA
+---------------
+preview_records:
+  - preview_id (PK)
+  - record_id (nullable, generated at archive)
+  - state (enum)
+  - file_path
+  - canonical_image_path
+  - user_id
+  - metadata fields (artist, album, etc.)
+  - AI results (ocr_text, ai_metadata, confidence)
+  - Pipeline tracking (model_used, cost_estimate, enrichment_source)
+  - Timestamps
+
+archive_records_v2:
+  - record_id (PK)
+  - preview_id (FK, for audit trail)
+  - user_id
+  - state (ARCHIVED)
+  - All metadata fields
+  - AI results
+  - Pipeline tracking
+  - Timestamps

@@ -1,53 +1,103 @@
-# Cloud Shell'de Çalıştırılacak Komutlar
-# Bu dosyayı Cloud Shell'de açıp komutları sırayla çalıştırın
+# Cloud Console'dan Manuel Deploy Komutları
+# Proje: records-ai
+# Servis: records-ai-v2
+# Region: us-central1
 
-# 1. Proje dizinine gidin
-cd ~/records_ai_v2
+# ============================================
+# YÖNTEM 1: Cloud Build ile Deploy (ÖNERİLEN)
+# ============================================
 
-# 2. Dosyaları kontrol edin
-ls -la main.py Procfile runtime.txt backend/main.py
+# Cloud Build ile build ve deploy et
+gcloud builds submit --config cloudbuild.yaml --project records-ai
 
-# 3. main.py wrapper oluşturun (eğer yoksa)
-cat > main.py << 'EOFMAIN'
-"""
-Root entrypoint wrapper for Cloud Run buildpacks.
-This file allows the Python buildpack to detect the application entrypoint.
-"""
-import sys
-import os
+# ============================================
+# YÖNTEM 2: Direkt Cloud Run'a Deploy
+# ============================================
 
-# Add backend to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
+# GitHub source'dan direkt deploy
+gcloud run deploy records-ai-v2 \
+  --source https://github.com/SanliData/records_ai_v2.git \
+  --source-branch main \
+  --platform managed \
+  --region us-central1 \
+  --project records-ai \
+  --allow-unauthenticated \
+  --port 8080 \
+  --memory 1Gi \
+  --cpu 1 \
+  --timeout 300 \
+  --max-instances 10 \
+  --min-instances 0 \
+  --clear-base-image
 
-# Import and run the actual application
-from backend.main import app
+# ============================================
+# YÖNTEM 3: Local Directory'den Deploy
+# ============================================
 
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
-EOFMAIN
+# Önce git pull yap (en güncel kod için)
+git pull origin main
 
-# 4. Procfile oluşturun (eğer yoksa)
-echo "web: uvicorn backend.main:app --host 0.0.0.0 --port \$PORT" > Procfile
-
-# 5. runtime.txt oluşturun (eğer yoksa)
-echo "python-3.11" > runtime.txt
-
-# 6. Deploy edin
+# Sonra deploy et
 gcloud run deploy records-ai-v2 \
   --source . \
   --platform managed \
-  --region europe-west1 \
+  --region us-central1 \
+  --project records-ai \
   --allow-unauthenticated \
   --port 8080 \
-  --project records-ai
+  --memory 1Gi \
+  --cpu 1 \
+  --timeout 300 \
+  --max-instances 10 \
+  --min-instances 0 \
+  --clear-base-image
 
-# 7. Service URL'i alın
+# ============================================
+# YÖNTEM 4: Container Image'dan Deploy
+# ============================================
+
+# Önce image build et
+gcloud builds submit --tag gcr.io/records-ai/records-ai-v2:latest --project records-ai
+
+# Sonra deploy et
+gcloud run deploy records-ai-v2 \
+  --image gcr.io/records-ai/records-ai-v2:latest \
+  --platform managed \
+  --region us-central1 \
+  --project records-ai \
+  --allow-unauthenticated \
+  --port 8080 \
+  --memory 1Gi \
+  --cpu 1 \
+  --timeout 300 \
+  --max-instances 10 \
+  --min-instances 0
+
+# ============================================
+# SERVİS URL'İNİ AL
+# ============================================
+
 gcloud run services describe records-ai-v2 \
-  --region europe-west1 \
-  --format "value(status.url)" \
-  --project records-ai
+  --region us-central1 \
+  --project records-ai \
+  --format "value(status.url)"
 
+# ============================================
+# LOGLARI KONTROL ET
+# ============================================
 
+# Cloud Run logs
+gcloud run services logs read records-ai-v2 \
+  --region us-central1 \
+  --project records-ai \
+  --limit 50
 
+# Cloud Build logs
+gcloud builds list --project records-ai --limit 5
+
+# ============================================
+# EN KOLAY TEK KOMUT (ÖNERİLEN)
+# ============================================
+
+# Sadece bu komutu çalıştır:
+gcloud builds submit --config cloudbuild.yaml --project records-ai

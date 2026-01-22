@@ -133,11 +133,7 @@ When UPAP becomes an independent service:
 
 ---
 
-## Compliance
-
-This DDR is binding and cannot be reversed. All implementations must respect:
-
-1. Pipeline order: Upload → Process → Archive → Publish
+## ComplianceThis DDR is binding and cannot be reversed. All implementations must respect:1. Pipeline order: Upload → Process → Archive → Publish
 2. Archive stage authentication requirement
 3. Publish stage archive validation
 4. Preview mode limitation (Upload + Process only)---## References- `backend/services/upap/engine/upap_engine.py` - UPAP Engine implementation
