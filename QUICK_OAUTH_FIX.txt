@@ -1,0 +1,20 @@
+GOOGLE CLOUD CONSOLE - HIZLI FIX
+=================================
+
+1. https://console.cloud.google.com/apis/credentials?project=records-ai
+
+2. Client ID bul: 969278596906-afqorvadshqquuhts4rpk0620dgg1fa4
+
+3. EDIT tıkla
+
+4. Authorized JavaScript origins:
+   http://127.0.0.1:8082
+   http://localhost:8082
+
+5. Authorized redirect URIs:
+   http://127.0.0.1:8082/auth/callback
+   http://localhost:8082/auth/callback
+
+6. SAVE
+
+7. 1-2 dakika bekle, tarayıcıyı yenile

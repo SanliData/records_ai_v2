@@ -1,86 +1,52 @@
-# 🔧 OAuth Origin Mismatch Düzeltme
+# OAuth Origin Mismatch - Hızlı Çözüm
 
-## ❌ Hata
-**Error 400: origin_mismatch**
+## 🔴 Sorun
+Google OAuth `origin_mismatch` hatası: `http://127.0.0.1:8082` origin'i kayıtlı değil.
 
-`https://zyagrolia.com` domain'i Google OAuth client konfigürasyonunda tanımlı değil.
-
-## ✅ ÇÖZÜM: Google Cloud Console'da OAuth Client Güncelle
+## ✅ Çözüm (2 Dakika)
 
 ### Adım 1: Google Cloud Console'a Git
-1. **Google Cloud Console**: https://console.cloud.google.com/
-2. **Project seç**: `records-ai` (Project ID: 969278596906)
-3. **Navigation Menu** (☰) → **APIs & Services** → **Credentials**
+1. https://console.cloud.google.com/apis/credentials?project=records-ai
+2. OAuth 2.0 Client ID'yi bul: `969278596906-afqorvadshqquuhts4rpk0620dgg1fa4`
+3. **EDIT** butonuna tıkla
 
-### Adım 2: OAuth Client'ı Bul
-1. **OAuth 2.0 Client IDs** listesinde şunu bul:
-   - **Client ID**: `969278596906-afqorvadshqquuhts4rpk0620dgg1fa4`
-   - **Name**: Muhtemelen "Web client" veya benzeri
+### Adım 2: Authorized JavaScript Origins Ekle
+**Authorized JavaScript origins** bölümüne ekle:
+```
+http://127.0.0.1:8082
+http://localhost:8082
+http://127.0.0.1:8000
+http://localhost:8000
+```
 
-2. **Edit** (✏️) butonuna tıkla
+### Adım 3: Authorized Redirect URIs Ekle
+**Authorized redirect URIs** bölümüne ekle:
+```
+http://127.0.0.1:8082/auth/callback
+http://localhost:8082/auth/callback
+http://127.0.0.1:8000/auth/callback
+http://localhost:8000/auth/callback
+```
 
-### Adım 3: Authorized JavaScript Origins Ekle
-**Authorized JavaScript origins** bölümüne şunları ekle:
+### Adım 4: SAVE
+**SAVE** butonuna tıkla (değişiklikler 1-2 dakika içinde aktif olur)
 
+## 🚀 Alternatif: Production URL'leri de Ekle
+Production için de ekle:
 ```
 https://zyagrolia.com
+https://api.zyagrolia.com
 https://records-ai-v2-969278596906.us-central1.run.app
 ```
 
-**ÖNEMLİ:**
-- Protocol (`https://`) ekle
-- Trailing slash (`/`) ekleme
-- Her origin'i ayrı satıra yaz
+## ✅ Test
+1. Tarayıcıyı yenile (hard refresh: CTRL+SHIFT+R)
+2. http://127.0.0.1:8082/login.html
+3. "Google ile oturum açın" butonuna tıkla
+4. Artık çalışmalı!
 
-### Adım 4: Authorized Redirect URIs (Gerekirse)
-Eğer OAuth callback kullanıyorsan, **Authorized redirect URIs** bölümüne ekle:
-
-```
-https://zyagrolia.com/auth/callback
-https://records-ai-v2-969278596906.us-central1.run.app/auth/callback
-```
-
-### Adım 5: Kaydet
-1. **Save** butonuna tıkla
-2. Değişiklikler **hemen aktif olur** (güncelleme gerekmez)
-
-### Adım 6: Test Et
-1. Tarayıcıda `https://zyagrolia.com/login.html` aç
-2. "Sign in with Google" butonuna tıkla
-3. OAuth hatası artık görünmemeli
-
----
-
-## 📋 Mevcut Konfigürasyon (Kontrol İçin)
-
-**OAuth Client ID:**
-```
-969278596906-afqorvadshqquuhts4rpk0620dgg1fa4.apps.googleusercontent.com
-```
-
-**Kullanım yeri:**
-- `frontend/login.html` → `google.accounts.id.initialize()`
-
-**Backend endpoint:**
-- `POST /auth/login/google` → `backend/api/v1/auth_router.py`
-
----
-
-## ⚠️ GÜVENLİK NOTLARI
-
-1. **Sadece kendi domain'lerini ekle** - Başka domain ekleme
-2. **HTTPS zorunlu** - HTTP ekleme
-3. **Test domain'lerini kaldır** - Production'da sadece `zyagrolia.com` olmalı
-
----
-
-## ✅ Doğrulama
-
-OAuth client'ı güncelledikten sonra:
-
-```bash
-# Test: Login sayfasını aç
-curl -I https://zyagrolia.com/login.html
-
-# OAuth akışı çalışmalı (browser'da test et)
-```
+## 📝 Not
+Değişiklikler Google tarafında 1-2 dakika içinde aktif olur. Hala çalışmazsa:
+- Tarayıcı cache'ini temizle
+- Incognito mode'da dene
+- 2 dakika bekle ve tekrar dene
