@@ -10,13 +10,19 @@
 - **EDIT** (kalem ikonu) tıkla
 
 ### 3. Authorized JavaScript Origins Ekle
-**Şu satırları ekle:**
+**⚠️ ÖNEMLİ: Sadece domain + port (path YOK!)**
+
+**Şu satırları ekle (path OLMADAN):**
 ```
 http://127.0.0.1:8082
 http://localhost:8082
 ```
 
+❌ **YANLIŞ:** `http://127.0.0.1:8082/auth/callback` (path var, hata verir!)
+
 ### 4. Authorized Redirect URIs Ekle
+**Bu bölümde path OLABİLİR**
+
 **Şu satırları ekle:**
 ```
 http://127.0.0.1:8082/auth/callback
