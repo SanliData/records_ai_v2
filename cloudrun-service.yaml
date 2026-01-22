@@ -1,0 +1,40 @@
+# Cloud Run Service Configuration
+# Use this file as reference for manual deployment settings
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: records-ai-v2
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+        run.googleapis.com/cpu-throttling: "true"
+    spec:
+      containerConcurrency: 200
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/records-ai/records-ai-v2:latest
+        ports:
+        - name: http1
+          containerPort: 8082
+        env:
+        - name: PORT
+          value: "8082"
+        - name: ENVIRONMENT
+          value: "production"
+        - name: UPAP_ENABLE_OCR
+          value: "false"
+        - name: UPAP_ENABLE_AI
+          value: "false"
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+  traffic:
+  - percent: 100
+    latestRevision: true

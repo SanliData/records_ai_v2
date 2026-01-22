@@ -25,13 +25,14 @@ gcloud run deploy $SERVICE_NAME \
   --platform managed \
   --region $REGION \
   --allow-unauthenticated \
-  --port 8080 \
-  --max-instances 3 \
+  --port 8082 \
+  --max-instances 10 \
   --min-instances 0 \
   --timeout 300 \
   --memory 1Gi \
   --cpu 1 \
-  --set-env-vars PORT=8080
+  --set-env-vars PORT=8082,ENVIRONMENT=production,UPAP_ENABLE_OCR=false,UPAP_ENABLE_AI=false \
+  --max-requests-per-container 200
 
 # Get service URL
 echo ""
