@@ -156,10 +156,10 @@ class AIPipeline:
                 raise FileNotFoundError(f"Image not found: {image_path}")
             
             # OCR extraction
-            ocr_text = ocr_engine.extract_text(str(image_path))
+            ocr_text = ocr_engine.run_ocr(str(image_path))
             
-            # Basic text detection
-            text_regions = vision_engine.detect_text_regions(str(image_path))
+            # Basic text detection (vision_engine doesn't have detect_text_regions, skip for now)
+            text_regions = []
             
             return {
                 "text": ocr_text,
